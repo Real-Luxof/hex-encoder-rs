@@ -1,0 +1,45 @@
+/* multi-line comment test! */
+// if sneak, make 10-block (horizontal) 2x1 tunnel. else, break block player is looking at.
+Mind's Reflection
+Compass' Purification
+Mind's Reflection
+Alidade's Purification
+
+Mind's Reflection
+Stadiometer's Purification
+{
+    <1.7>
+}
+Flock's Disintegration
+Minimus Distillation
+{
+    /** stack: eyepos, lookdir
+     * if sneak then make 10-block (horizontal) 2x1 tunnel
+     * only take horizontal look dir */
+    Vector Disintegration
+    Jester's Gambit
+    Numerical Reflection: 0
+    Multiplicative Distillation
+    Jester's Gambit
+    Vector Exaltation
+
+    Axial Purification
+
+    Numerical Reflection: 10
+    Gemini Decomposition
+    Gemini Gambit
+    Gemini Decomposition
+    Flock's Gambit
+    {
+        Bookkeeper's Gambit: v
+    }
+    Jester's Gambit
+    Thoth's Gambit
+}
+{
+    // stack: eyepos, lookdir
+    // if no sneak then break block
+    Break Block
+}
+Augur's Exaltation
+Hermes' Gambit

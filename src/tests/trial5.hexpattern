@@ -1,0 +1,58 @@
+// embedded lists check!
+// 3x3 hammer
+Mind's Reflection
+Compass' Purification
+Mind's Reflection
+Alidade's Purification
+Dioscuri Gambit
+Archer's Distillation
+Rotation Gambit II
+Architect's Distillation
+{
+    // stack: block, architect, offset
+    Undertaker's Gambit
+    Multiplicative Distillation
+    Numerical Reflection: 0
+    Equality Distillation
+    {
+        Additive Distillation
+        Break Block
+    }
+    {
+        Bookkeeper's Gambit: vv
+    }
+    Augur's Exaltation
+    Hermes' Gambit
+}
+{
+    <[
+        (-1, -1, -1),
+        (-1, -1, 0),
+        (-1, -1, 1),
+        (-1, 0, -1),
+        (-1, 0, 0),
+        (-1, 0, 1),
+        (-1, 1, -1),
+        (-1, 1, 0),
+        (-1, 1, 1),
+        (0, -1, -1),
+        (0, -1, 0),
+        (0, -1, 1),
+        (0, 0, -1),
+        (0, 0, 0)
+        (0, 0, 1)
+        (0, 1, -1)
+        (0, 1, 0)
+        (0, 1, 1)
+        (1, -1, -1)
+        (1, -1, 0)
+        (1, -1, 1)
+        (1, 0, -1)
+        (1, 0, 0)
+        (1, 0, 1)
+        (1, 1, -1)
+        (1, 1, 0)
+        (1, 1, 1)
+    ]>
+}
+Thoth's Gambit

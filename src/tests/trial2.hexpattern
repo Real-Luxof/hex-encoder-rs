@@ -1,0 +1,22 @@
+// Numerical Reflection and Bookkeeper's Gambit test!
+// Safe-Explode everything around with power 3
+Mind's Reflection
+Compass' Purification
+Numerical Reflection: 20
+Zone Distillation: Living
+{
+    // stack: entity
+    // because blown feet hurt more than blown head (Mojank)
+    Compass' Purification II
+    Numerical Reflection: 4
+    Gemini Gambit
+    Create Water
+    // power 5 Explosions at feet are LETHAL for almost everything except armoured players
+    // like, this is a one-shot for a lot of shit
+    Numerical Reflection: 3
+    Explosion
+    Conjure Block
+    Break Block
+}
+Jester's Gambit
+Thoth's Gambit

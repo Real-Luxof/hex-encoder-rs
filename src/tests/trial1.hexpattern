@@ -1,0 +1,32 @@
+// basic pattern-to-binary skillcheck
+// ignite entity (or block if not looking at an entity)
+// entity raycast
+Mind's Reflection
+Compass' Purification
+Mind's Reflection
+Alidade's Purification
+
+Dioscuri Gambit
+Dioscuri Gambit
+Dioscuri Gambit
+// stack: pos, look, pos, look, pos, look
+Archer's Distillation
+Rotation Gambit II
+Architect's Distillation
+Additive Distillation
+Rotation Gambit II
+Scout's Distillation
+
+// stack: block+architect, entity
+
+// ignite entity if possible
+Gemini Decomposition
+Nullary Reflection
+Equality Distillation
+{
+    Jester's Gambit
+}
+{}
+Augur's Exaltation
+Hermes' Gambit
+Ignite
