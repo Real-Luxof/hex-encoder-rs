@@ -1,9 +1,9 @@
-A (WIP) encoder for [Hex Casting](https://modrinth.com/mod/hex-casting) spell serde by autohotkey assistance or hitting some sick ass moves on that DDR pad in Minecraft.  
+A (WIP) encoder for [Hex Casting](https://modrinth.com/mod/hex-casting) spell serde by autohotkey assistance or hitting some sick ass moves on that DDR pad (ingame).  
 
 Serde algorithms built in collaboration with **@matt6049**. Huge credits to him, he's basically the brilliant guy behind a lot of this. I would've never conceived it on my own.  
 
 The main idea is that a person:
-- gains patterns either through the Hex Casting forums, the [Akashic Records](https://forum.petra-k.at/viewforum.php?f=2) or through writing a hex and wishes to import the patterns into their Minecraft world,
+- gains patterns either through the Hex Casting forums (also known as the [Akashic Records](https://forum.petra-k.at/viewforum.php?f=2)) or through writing a hex and wishes to import the patterns into their Minecraft world,
 - writes patterns into a `.hexpattern` file,
 - runs this encoder on said file,
 - reads the binary output into their world via either:
@@ -23,4 +23,6 @@ The main idea is that a person:
 - then is given the hex and can cast it.
 - all without any addons.
 
-By the end, this encoder should be able to output binary, octals (for the autohotkey script), and dance moves for easy-medium-hard dance decoders, for all valid `.hexpattern` files. This includes macro functionality.
+By the end, this encoder should be able to output binary, octals (for the autohotkey script), and dance moves for easy-medium-hard dance decoders, for all valid `.hexpattern` files. This includes macro functionality.  
+
+Oh, and I apologize for the code. This is like, my first actual Rust project.  

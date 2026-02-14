@@ -42,7 +42,7 @@ Produced by a Numerical Reflection or embedded number in the original code,
 decoded into an embedded number.  
 If born of a Numerical Reflection, encoded into `{ num } flock_disint`.  
 If born of an embedded num, encoded into `num`.
-there are two bytes after this of the desired number in binary form.
+there are four bytes after this of the desired number in binary form.
 ### 10 - Bookkeeper's Gambit
 Produced by a Bookkeeper's Gambit in the original code,  
 decoded into:

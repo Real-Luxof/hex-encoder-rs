@@ -1,16 +1,16 @@
 use crate::POPULAR_PATTERNS;
 
 
+// woah, at least take me out to dinner first
+// vscode autofill is the funniest shit ever: ", encoder_utils.rs, before you start writing all over me with your string processing and your binary conversions and your stateful encoder state and your pattern matching and your flatmaps and your chunking and your whatever the fuck else you have in store for me, encoder_utils.rs. at least let me put on a nice dress and do my hair before you start writing all over me with your string processing and your binary conversions and your stateful encoder state and your pattern matching and your flatmaps and your chunking and your whatever the"
 trait STRIP {
     fn try_strip_prefix(&self, pattern: &str) -> String;
 
     fn try_strip_suffix(&self, pattern: &str) -> String;
 }
 
-trait Chunked<T> {
+pub trait Chunked<T> {
     fn next_chunk_of(&mut self, size: usize) -> Option<Vec<T>>;
-
-    fn windows(&mut self, size: usize) -> Option<Vec<Vec<T>>>;
 }
 
 impl STRIP for String {
@@ -34,28 +34,6 @@ impl<T: Clone, I: Iterator<Item = T>> Chunked<T> for I {
         }
 
         return Some(whole);
-    }
-
-    fn windows(&mut self, size: usize) -> Option<Vec<Vec<T>>> {
-        let first_chunk = self.next_chunk_of(size);
-        if first_chunk.is_none() { return None; }
-
-        let mut chunks = vec![first_chunk.unwrap()];
-
-        loop {
-            let mut next_chunk = chunks.last().unwrap().to_vec();
-            next_chunk.remove(0);
-
-            let next = self.next();
-            if next.is_none() {
-                break;
-            } else {
-                next_chunk.push(next.unwrap());
-            }
-            chunks.push(next_chunk);
-        }
-
-        return Some(chunks);
     }
 }
 
@@ -88,45 +66,96 @@ pub fn with_null_byte(
     return vec![String::from("00000000"), opcode]
 }
 
+// why am i magnetically attracted to string processing holy shit
 /// For use in a flatmap.
 pub fn encode_line(
     line_str: &String,
     line: usize
 ) -> Vec<String> {
 
-    let windows_option = line_str.chars().into_iter().windows(2);
-    if windows_option.is_none() { return encode_pattern_8bit(line_str, line); }
-
     let mut line_patterns: Vec<String> = vec![];
     let mut buffer = String::new();
+    let mut in_vec = false;
 
-    for window_chars in windows_option.unwrap() {
-        let window = window_chars[0].to_string() + &window_chars[1].to_string();
+    let mut last_ch = ' ';
+    // this is literally just to convert a line from
+    // "<[ (0, 0, 1), 5 ]>" to ["<[", "<(0, 0, 1)>", "<5>", "]>"]
+    for ch in line_str.chars() {
 
+        let mut window = String::from(last_ch);
+        window.push(ch);
+
+        // do i dislike str processing because it looks so nonsensical
+        // or am i just bad at it
         if window == "<[" {
             set_encoder_state(1, get_encoder_state(1) + 1);
             line_patterns.push(window);
+            buffer = String::new();
             continue;
 
         } else if window == "]>" {
             if get_encoder_state(1) == 0 {
                 panic!("Err at line {line}: list closed without matching left square bracket.");
             }
-            set_encoder_state(1, get_encoder_state(1) + 1);
-            line_patterns.push(buffer);
+            set_encoder_state(1, get_encoder_state(1) - 1);
+
+            let trimmed = buffer.trim();
+            if get_pat_bin_optional(trimmed).is_none() {
+                line_patterns.push(trimmed.to_string());
+            } else if trimmed != "" && trimmed != "]" {
+                line_patterns.push(String::from("<") + trimmed + ">");
+            }
+
             buffer = String::new();
-            line_patterns.push(window);
             continue;
 
-        } else if window_chars[1] == ',' && get_encoder_state(1) > 0 {
-            buffer.push(window_chars[0]);
+        } else if ch == '(' {
+            in_vec = true;
+
+            let trimmed = buffer.trim().to_string();
+            if trimmed != "<" && trimmed != "" {
+                line_patterns.push(trimmed);
+                buffer = String::new();
+            }
+            buffer.push(ch);
+            continue;
+
+        } else if window == ")>" && get_encoder_state(1) == 0 && in_vec {
+            in_vec = false;
+            buffer.push(ch);
             line_patterns.push(buffer);
             buffer = String::new();
-            line_patterns.push(String::from(","));
+            continue;
+
+        } else if ch == ')' && get_encoder_state(1) > 0 && in_vec {
+            in_vec = false;
+            buffer.push(ch);
+            //line_patterns.push(String::from("<") + &buffer + ">");
+            //buffer = String::new();
+            continue;
+
+        } else if ch == ',' && get_encoder_state(1) > 0 && !in_vec {
+            if buffer.len() == 0 {
+                panic!("Err at line {line}: unexpected comma.");
+            }
+
+            let trimmed = buffer.trim();
+            if get_pat_bin_optional(trimmed).is_none() {
+                line_patterns.push(trimmed.to_string());
+            } else if trimmed != "" {
+                line_patterns.push(String::from("<") + trimmed + ">");
+            }
+            buffer = String::new();
             continue;
         }
 
-        buffer += &window;
+        last_ch = ch;
+
+        buffer.push(ch);
+    }
+
+    if line_patterns.len() == 0 {
+        line_patterns.push(line_str.clone());
     }
 
     return line_patterns.iter().flat_map(|p| encode_pattern_8bit(p, line)).collect();
@@ -219,11 +248,13 @@ fn get_pat_bin_optional(
 fn make_numref_op(
     num: f64
 ) -> Vec<String> {
-    return vec![
-        pad_0_upto(0, 8),
-        NUMREF_OPCODE.to_string(),
-        pad_0_upto(num as usize, 16)
+    let mut op = vec![
+        pad_0_upto(get_pat_bin("Introspection"), 8)
     ];
+    op.append(&mut embed_num(num));
+    op.push(pad_0_upto(get_pat_bin("Retrospection"), 8));
+    op.push(pad_0_upto(get_pat_bin("Flock's Disintegration"), 8));
+    return op;
 }
 
 fn make_bk_op(
@@ -253,7 +284,8 @@ fn embed_num(
     return vec![
         pad_0_upto(0, 8),
         NUMREF_OPCODE.to_string(),
-        pad_0_upto(num.to_bits() as usize, 16)
+        format!("{:064b}", num.to_bits())
+        //pad_0_upto(num.to_bits() as usize, 16)
     ];
 }
 
