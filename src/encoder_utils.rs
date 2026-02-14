@@ -99,10 +99,11 @@ pub fn encode_line(
             }
             set_encoder_state(1, get_encoder_state(1) - 1);
 
+            buffer.truncate(buffer.len() - 1);
             let trimmed = buffer.trim();
             if get_pat_bin_optional(trimmed).is_none() {
                 line_patterns.push(trimmed.to_string());
-            } else if trimmed != "" && trimmed != "]" {
+            } else if trimmed != "" {
                 line_patterns.push(String::from("<") + trimmed + ">");
             }
 
