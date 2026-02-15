@@ -1,0 +1,86 @@
+{
+    // 2.0 double in binary
+    <[0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]>
+}
+Flock's Disintegration
+
+// is the double negative?
+Speaker's Decomposition
+Numerical Reflection: 0
+Equality Distillation
+Numerical Reflection: 1
+Numerical Reflection: -1
+Augur's Exaltation
+// stack: double, neg
+
+Jester's Gambit
+// stack: neg, double
+// calculate exponent and mantissa
+Numerical Reflection: 10 // n
+Numerical Reflection: 0  // exponent
+Numerical Reflection: 1  // mantissa
+Numerical Reflection: 3
+Flock's Gambit
+Huginn's Gambit
+
+{
+    // stack: neg, x
+    Bookkeeper's Gambit: v-
+
+    Muninn's Reflection // x, [n, exp, man]
+    Numerical Reflection: 0
+    Selection Distillation // x, n
+    Undertaker's Gambit
+    Numerical Reflection: 2
+    Jester's Gambit
+    Power Distillation
+    Multiplicative Distillation // n, x*2^n
+    Muninn's Reflection
+    Rotation Gambit // x*2^n, [n, exp, man], n
+
+    Numerical Reflection: -1
+    Minimus Distillation II
+    Numerical Reflection: 2
+    Numerical Reflection: 1
+    Augur's Exaltation // x*2^n, [n, exp, man], man_or_exp_idx
+
+    Gemini Decomposition
+    Huginn's Gambit
+
+    Prospector's Gambit // x*2^n, [n, exp, man], man_or_exp_idx, [n, exp, man]
+    Jester's Gambit // x*2^n, [n, exp, man], [n, exp, man], man_or_exp_idx
+    Selection Distillation // x*2^n, [n, exp, man], man_or_exp
+    Rotation Gambit // [n, exp, man], man_or_exp, x*2^n
+    Additive Distillation // [n, exp, man], next_man_or_exp
+
+    Muninn's Reflection
+    Jester's Gambit
+    Surgeon's Exaltation
+
+    Speaker's Decomposition
+    Numerical Reflection: 1
+    Subtractive Distillation
+    Speaker's Distillation
+
+    Huginn's Gambit
+}
+Jester's Gambit
+Thoth's Gambit
+Bookkeeper's Gambit: v
+
+
+
+Muninn's Reflection
+Flock's Disintegration
+// stack: neg, n, exponent, mantissa
+Bookkeeper's Gambit: v--
+// stack: neg, exp, man
+Jester's Gambit
+Numerical Reflection: 1023
+Subtractive Distillation
+Numerical Reflection: 2
+Jester's Gambit
+Power Distillation
+Multiplicative Distillation
+Multiplicative Distillation
+Reveal
