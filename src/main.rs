@@ -53,45 +53,8 @@ fn run_tests(
     }
 }
 
-fn bin_to_double(str: String) -> f64 {
-    let mut chars = str.chars();
-
-    let neg = if chars.next().unwrap() == '1' { -1.0 } else { 1.0 };
-    let exponent_chars = chars.next_chunk_of(11).unwrap();
-    let mantissa_chars = chars.next_chunk_of(52).unwrap();
-
-    let mut exponent: f64 = 0.0;
-    let mut n: i32 = 10;
-    for bit in exponent_chars {
-        if bit == '1' {
-            exponent += 2_f64.powi(n);
-        }
-        n -= 1;
-    }
-    let mut mantissa: f64 = 1.0;
-    for bit in mantissa_chars {
-        if bit == '1' {
-            mantissa += 2_f64.powi(n);
-        }
-        n -= 1;
-    }
-    return neg * mantissa * 2_f64.powi(exponent as i32 - 1023);
-}   
-
 fn main() {
     let args: Vec<String> = env::args().collect();
-
-    /*//let test: f64 = -2.5;
-    //let test: f64 = 3.0;
-    //let test: f64 = -3.5;
-    let test: f64 = 2.0;
-    let test_str = format!("{:064b}", test.to_bits());
-    //let bits = u64::from_str_radix(&test_str, 2).unwrap();
-    //let test2 = f64::from_bits(bits);
-    dbg!(test);
-    dbg!(&test_str);
-    let test2= bin_to_double(test_str);
-    dbg!(test2);*/
 
     let mut path = String::new();
     if args.len() > 1 {
@@ -105,6 +68,7 @@ fn main() {
     if args.contains(&String::from("-t")) {
         run_tests(path);
     } else {
+        encode(&path);
         //dbg!(encode(&path));
     }
 }
