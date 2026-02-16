@@ -1,4 +1,6 @@
-use std::fs;
+use std::{fs, vec};
+
+use crate::used_types::Chunked;
 
 fn get_file_lines(
     path: &String
@@ -73,3 +75,49 @@ pub fn get_file(
 ) -> Vec<String> {
     return flatmap_necessaries(remove_lines_whitespace(get_file_lines(path)));
 }
+
+pub fn translate_to_bin(
+    contents: &Vec<String>
+) -> Vec<Vec<bool>> {
+    return contents
+        .iter()
+        .map(|s| s
+            .chars()
+            .map(|c| c == '1')
+            .collect()
+        )
+        .collect();
+}
+
+pub fn translate_to_octal(
+    contents: &Vec<String>
+) -> Vec<u8> {
+    return contents
+        .iter()
+        .flat_map(|s| {
+            let mut ret: Vec<String> = s
+                .chars()
+                .chunks_of(8)
+                .map(|chars| chars
+                    .iter()
+                    .collect::<String>()
+                ).collect();
+
+            let the_rest = s[s.len() - s.len() % 8..s.len()].to_string();
+            if the_rest != "" {
+                ret.push(the_rest);
+            }
+
+            ret
+        })
+        .map(|s| {
+            u8::from_str_radix(s.as_str(), 2).unwrap()
+        })
+        .collect();
+}
+
+/*pub fn translate_to_dance(
+    contents: &Vec<String>
+) -> Vec<String> {
+    
+}*/

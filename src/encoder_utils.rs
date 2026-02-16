@@ -1,41 +1,5 @@
 use crate::POPULAR_PATTERNS;
-
-
-// woah, at least take me out to dinner first
-// vscode autofill is the funniest shit ever: ", encoder_utils.rs, before you start writing all over me with your string processing and your binary conversions and your stateful encoder state and your pattern matching and your flatmaps and your chunking and your whatever the fuck else you have in store for me, encoder_utils.rs. at least let me put on a nice dress and do my hair before you start writing all over me with your string processing and your binary conversions and your stateful encoder state and your pattern matching and your flatmaps and your chunking and your whatever the"
-trait STRIP {
-    fn try_strip_prefix(&self, pattern: &str) -> String;
-
-    fn try_strip_suffix(&self, pattern: &str) -> String;
-}
-
-pub trait Chunked<T> {
-    fn next_chunk_of(&mut self, size: usize) -> Option<Vec<T>>;
-}
-
-impl STRIP for String {
-    fn try_strip_prefix(&self, pattern: &str) -> String {
-        return self.strip_prefix(pattern).unwrap_or(self).to_string();
-    }
-
-    fn try_strip_suffix(&self, pattern: &str) -> String {
-        return self.strip_suffix(pattern).unwrap_or(self).to_string();
-    }
-}
-
-impl<T: Clone, I: Iterator<Item = T>> Chunked<T> for I {
-    fn next_chunk_of(&mut self, size: usize) -> Option<Vec<T>> {
-        let mut whole = vec![];
-        
-        for _ in 0..size {
-            let next = self.next();
-            if next.is_none() { return None; }
-            else { whole.push(next.unwrap()); }
-        }
-
-        return Some(whole);
-    }
-}
+use crate::used_types::{Chunked, STRIP};
 
 
 const END_OPCODE: &str = "00";
@@ -45,7 +9,7 @@ const LIST_OPCODE: &str = "11";
 
 /// stores in order:
 /// - the indentation level (list)
-/// - the list nest level (do not fw this it's used for line-processing)
+/// - the embedded list nest level (do not fw this it's used for line pre-processing)
 static mut ENCODER_STATE: [usize; 2] = [0, 0];
 
 pub fn get_encoder_state(idx: usize) -> usize {
