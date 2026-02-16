@@ -97,13 +97,13 @@ pub fn translate_to_octal(
         .flat_map(|s| {
             let mut ret: Vec<String> = s
                 .chars()
-                .chunks_of(8)
+                .chunks_of(3)
                 .map(|chars| chars
                     .iter()
                     .collect::<String>()
                 ).collect();
 
-            let the_rest = s[s.len() - s.len() % 8..s.len()].to_string();
+            let the_rest = s[s.len() - s.len() % 3..s.len()].to_string();
             if the_rest != "" {
                 ret.push(the_rest);
             }
