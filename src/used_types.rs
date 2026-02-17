@@ -1,5 +1,17 @@
+
 pub struct Iter<T: Clone> {
     inner: Vec<T>
+}
+
+pub struct Pair<T1, T2> {
+    pub left: T1,
+    pub right: T2
+}
+
+impl<T1: Clone, T2: Clone> Pair<T1, T2> {
+    pub fn convert<U1: From<T1>, U2: From<T2>>(&self) -> Pair<U1, U2> {
+        Pair { left: U1::from(self.left.clone()), right: U2::from(self.right.clone()) }
+    }
 }
 
 impl<T: Clone> Iterator for Iter<T> {
@@ -8,25 +20,6 @@ impl<T: Clone> Iterator for Iter<T> {
     fn next(&mut self) -> Option<Self::Item> {
         if self.inner.len() == 0 { None } else { Some(self.inner.remove(0)) }
     }
-}
-
-/*#[derive(Debug)]
-pub enum EncoderError {
-    UnsupportedFormat(String)
-}
-
-impl fmt::Display for EncoderError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            EncoderError::UnsupportedFormat(format) => write!(f, "Unsupported format (must be \"bin\", \"octal\", or \"dance\"): {}", format)
-        }
-    }
-}
-
-impl std::error::Error for EncoderError {}*/
-
-pub trait Bits {
-    fn to_bits(&self) -> Vec<u8>;
 }
 
 pub trait Chunked<T: Clone> {
@@ -41,30 +34,6 @@ pub trait STRIP {
     fn try_strip_prefix(&self, pattern: &str) -> String;
 
     fn try_strip_suffix(&self, pattern: &str) -> String;
-}
-
-impl Bits for u8 {
-    fn to_bits(&self) -> Vec<u8> {
-        vec![
-            self >> 7,
-            (self << 1) >> 7,
-            (self << 2) >> 7,
-            (self << 3) >> 7,
-            (self << 4) >> 7,
-            (self << 5) >> 7,
-            (self << 6) >> 7
-        ]
-    }
-}
-
-impl Bits for String {
-    fn to_bits(&self) -> Vec<u8> {
-        self
-            .as_bytes()
-            .iter()
-            .flat_map(|s| s.to_bits())
-            .collect()
-    }
 }
 
 impl<T: Clone, I: Iterator<Item = T>> Chunked<T> for I {
