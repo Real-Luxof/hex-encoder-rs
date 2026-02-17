@@ -10,6 +10,7 @@ use crate::encoder_utils::encode_line;
 use crate::encoder_utils::end_op;
 use crate::file_utils::get_file;
 use crate::file_utils::translate_to_bin;
+use crate::file_utils::translate_to_dance;
 use crate::file_utils::translate_to_octal;
 
 // with permission from petra i scraped the forums
@@ -157,6 +158,7 @@ fn main() {
     }
 
     let encoded = encode(&input);
+    let mut write: String = String::new();
 
     if format == "bin" {
         let display = translate_to_bin(&encoded);
@@ -167,13 +169,37 @@ fn main() {
             }
             println!();
         }
+        write = encoded.join("\n");
 
     } else if format == "octal" {
         let display = translate_to_octal(&encoded);
-        for octal in display {
+        for octal in &display {
             print!("{octal}");
         }
         println!();
+        write = display
+            .iter()
+            .map(|n| n.to_string())
+            .collect();
 
+    } else if format == "dance" {
+        let display = translate_to_dance(&encoded);
+        for line in display {
+            println!("{}", &line);
+            write += line.strip_prefix("\x1b[4m").unwrap().strip_suffix("\x1b[0m").unwrap();
+            write.push_str("\n-----------------------------------------\n");
+        }
+    }
+
+    if output == "" {
+        println!("\nNo output path provided. Shutting down...");
+        return;
+    }
+
+    let res = fs::write(output, write);
+    if res.is_err() {
+        println!("\nError writing to output: {}", res.unwrap_err());
+    } else {
+        println!("\nSuccessfully written to output!");
     }
 }
