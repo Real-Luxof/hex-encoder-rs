@@ -274,7 +274,7 @@ fn embed_num(
 ) -> Vec<String> {
     let opcode;
     let num_bin;
-    if num % 1.0 <= f64::MIN && num.log2().ceil() <= 8.0 {
+    if (num % 1.0).abs() <= f64::MIN_POSITIVE && num <= 255.0 {
         opcode = EMBED_NUM_OPCODE_I8;
         num_bin = format!("{:08b}", num as i8);
     } else if is_f32(num) {
