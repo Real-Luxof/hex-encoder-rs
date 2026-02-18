@@ -103,7 +103,6 @@ pub fn translate_to_octal(
         .collect();
 }
 
-
 pub fn translate_to_dance(
     contents: &Vec<String>
 ) -> Vec<String> {

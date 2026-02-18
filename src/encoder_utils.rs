@@ -1,11 +1,17 @@
+use core::f64;
+
 use crate::POPULAR_PATTERNS;
 use crate::used_types::{Chunked, STRIP};
 
 
-const END_OPCODE: &str = "00";
-const NUMREF_OPCODE: &str = "01";
-const BK_OPCODE: &str = "10";
-const LIST_OPCODE: &str = "11";
+const END_OPCODE: &str = "000";
+const EMBED_NUM_OPCODE_I8: &str = "001";
+const EMBED_NUM_OPCODE_F32: &str = "010";
+const EMBED_NUM_OPCODE_DOUBLE: &str = "011";
+const BK_OPCODE_4BIT: &str = "100";
+const BK_OPCODE_8BIT: &str = "101";
+const BK_OPCODE_16BIT: &str = "110";
+const LIST_OPCODE: &str = "111";
 
 /// stores in order:
 /// - the indentation level (list)
@@ -139,7 +145,7 @@ pub fn encode_pattern_8bit(
         return vec![pad_0_upto(get_pat_bin(pattern), chunk_size)];
 
     } else if pattern.starts_with("Numerical Reflection: ") {
-        return make_numref_op(
+        return make_numref(
             pattern
                 .strip_prefix("Numerical Reflection: ")
                 .unwrap()
@@ -157,7 +163,7 @@ pub fn encode_pattern_8bit(
 
         let num = iota
             .parse::<f64>()
-            .map(|double| make_numref_op(double))
+            .map(|double| make_numref(double))
             .ok();
 
         let vec = remove_paren_or_blank(&iota)
@@ -210,7 +216,7 @@ fn get_pat_bin_optional(
         .and_then(|p| Some(p + 1));
 }
 
-fn make_numref_op(
+fn make_numref(
     num: f64
 ) -> Vec<String> {
     let mut op = vec![
@@ -226,12 +232,32 @@ fn make_bk_op(
     desired: &str,
     line: usize
 ) -> Vec<String> {
-    return vec![
+    let mut bookkeeper: Vec<char> = desired.chars().collect();
+    let mut len: usize = desired.chars().count();
+
+    let bookkeeper_opcode;
+    if len < 4 {
+        len = 4;
+        bookkeeper_opcode = BK_OPCODE_4BIT;
+    } else if len < 8 {
+        len = 8;
+        bookkeeper_opcode = BK_OPCODE_8BIT;
+    } else if len < 16 {
+        len = 16;
+        bookkeeper_opcode = BK_OPCODE_16BIT;
+    } else {
+        // Matt, is that you?
+        panic!("Exceeded max Bookkeeper's Gambit length (maximum = 16, found size = {len}) at line {line}");
+    }
+
+    while bookkeeper.len() < len {
+        bookkeeper.insert(0, '-');
+    }
+    vec![
         pad_0_upto(0, 8),
-        BK_OPCODE.to_string(),
-        desired
-            .chars()
-            .into_iter()
+        bookkeeper_opcode.into(),
+        bookkeeper
+            .iter()
             .map(|s| {
                 match s {
                     'v' => "1",
@@ -240,18 +266,44 @@ fn make_bk_op(
                 }
             })
             .collect()
-    ];
+    ]
 }
 
 fn embed_num(
     num: f64
 ) -> Vec<String> {
-    return vec![
+    let opcode;
+    let num_bin;
+    if num % 1.0 <= f64::MIN && num.log2().ceil() <= 8.0 {
+        opcode = EMBED_NUM_OPCODE_I8;
+        num_bin = format!("{:08b}", num as i8);
+    } else if is_f32(num) {
+        opcode = EMBED_NUM_OPCODE_F32;
+        num_bin = format!("{:032b}", (num as f32).to_bits());
+    } else {
+        opcode = EMBED_NUM_OPCODE_DOUBLE;
+        num_bin = format!("{:064b}", num.to_bits());
+    }
+    vec![
         pad_0_upto(0, 8),
-        NUMREF_OPCODE.to_string(),
-        format!("{:064b}", num.to_bits())
+        opcode.into(),
+        num_bin
         //pad_0_upto(num.to_bits() as usize, 16)
-    ];
+    ]
+}
+
+fn is_f32(
+    num: f64
+) -> bool {
+    (num - (num as f32 as f64)).abs() <= f64::MIN_POSITIVE
+    /*let bits_string =format!("{0:64b}", num.to_bits());
+    dbg!(&bits_string);
+    let bits = bits_string.as_str();
+    dbg!(&bits[1..4]);
+    dbg!(bits[1..4].contains('1'));
+    dbg!(&bits[35..64]);
+    dbg!(bits[35..64].contains('1'));
+    !bits[1..4].contains('1') && !bits[35..64].contains('1')*/
 }
 
 fn embed_vec(
