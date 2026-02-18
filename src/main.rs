@@ -6,12 +6,8 @@ use std::env;
 use std::fs;
 use std::io;
 
-use crate::encoder_utils::encode_line;
-use crate::encoder_utils::end_op;
-use crate::file_utils::get_file;
-use crate::file_utils::translate_to_bin;
-use crate::file_utils::translate_to_dance;
-use crate::file_utils::translate_to_octal;
+use crate::encoder_utils::{encode_line, end_op};
+use crate::file_utils::{get_file, translate_to_dance, translate_to_octal};
 
 // with permission from petra i scraped the forums
 // i found the most popular patterns
@@ -161,22 +157,20 @@ fn main() {
     let mut write: String = String::new();
 
     if format == "bin" {
-        let display = translate_to_bin(&encoded);
-        for line in display {
-            for bin in line {
-                let ch: u8 = if bin { 1 } else { 0 };
-                print!("{ch}");
-            }
-            println!();
+        for line in &encoded {
+            println!("{line}");
         }
+
         write = encoded.join("\n");
 
     } else if format == "octal" {
         let display = translate_to_octal(&encoded);
+
         for octal in &display {
             print!("{octal}");
         }
         println!();
+
         write = display
             .iter()
             .map(|n| n.to_string())
@@ -184,11 +178,21 @@ fn main() {
 
     } else if format == "dance" {
         let display = translate_to_dance(&encoded);
+
         for line in display {
             println!("{}", &line);
-            write += line.strip_prefix("\x1b[4m").unwrap().strip_suffix("\x1b[0m").unwrap();
-            write.push_str("\n-----------------------------------------\n");
+            write.push_str(
+                line
+                    .strip_prefix("\x1b[4m")
+                    .unwrap()
+                    .strip_suffix("\x1b[0m")
+                    .unwrap()
+            );
+            write.push_str(
+                "\n-----------------------------------------\n"
+            );
         }
+
     }
 
     if output == "" {

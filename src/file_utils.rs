@@ -76,19 +76,6 @@ pub fn get_file(
     return flatmap_necessaries(remove_lines_whitespace(get_file_lines(path)));
 }
 
-pub fn translate_to_bin(
-    contents: &Vec<String>
-) -> Vec<Vec<bool>> {
-    return contents
-        .iter()
-        .map(|s| s
-            .chars()
-            .map(|c| c == '1')
-            .collect()
-        )
-        .collect();
-}
-
 pub fn translate_to_octal(
     contents: &Vec<String>
 ) -> Vec<u8> {
