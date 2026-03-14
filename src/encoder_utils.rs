@@ -1,6 +1,6 @@
 use core::f64;
 
-use crate::POPULAR_PATTERNS;
+use crate::patterns::{POPULAR_PATTERNS, is_pattern};
 use crate::used_types::{Chunked, STRIP};
 
 
@@ -141,7 +141,7 @@ pub fn encode_pattern_8bit(
     if *pattern == String::from("") { return vec![]; }
     let chunk_size = 8;
 
-    if POPULAR_PATTERNS.contains(&pattern.as_str()) {
+    if is_pattern(&pattern) {
         return vec![pad_0_upto(get_pat_bin(pattern), chunk_size)];
 
     } else if pattern.starts_with("Numerical Reflection: ") {
@@ -210,7 +210,7 @@ fn get_pat_bin(
 fn get_pat_bin_optional(
     pattern: &str
 ) -> Option<usize> {
-    return POPULAR_PATTERNS
+    return POPULAR_PATTERNS.lock().unwrap()
         .iter()
         .position(|s| *s == pattern)
         .and_then(|p| Some(p + 1));

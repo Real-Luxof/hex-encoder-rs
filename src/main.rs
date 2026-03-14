@@ -1,6 +1,7 @@
 mod encoder_utils;
 mod file_utils;
 mod used_types;
+mod patterns;
 
 use std::env;
 use std::fs;
@@ -8,12 +9,7 @@ use std::io;
 
 use crate::encoder_utils::{encode_line, end_op};
 use crate::file_utils::{get_file, translate_to_dance, translate_to_octal};
-
-// with permission from petra i scraped the forums
-// i found the most popular patterns
-// fun fact: somehow, Introspection is used 2067 times but Retrospection is used only 1757 times
-// problem in my scraper? i dunno. One must imagine Luxof lazy.
-const POPULAR_PATTERNS: [&str; 175] = ["Introspection", "Retrospection", "Jester's Gambit", "Gemini Decomposition", "Rotation Gambit", "Additive Distillation", "Flock's Disintegration", "Hermes' Gambit", "Muninn's Reflection", "Augur's Exaltation", "Flock's Gambit", "Subtractive Distillation", "Mind's Reflection", "Huginn's Gambit", "Multiplicative Distillation", "Compass' Purification", "Fisherman's Gambit", "Division Distillation", "Selection Distillation", "Prospector's Gambit", "Thoth's Gambit", "Dioscuri Gambit", "Gemini Gambit", "Alidade's Purification", "Equality Distillation", "Undertaker's Gambit", "Vector Disintegration", "Length Purification", "Flock's Reflection", "Vector Exaltation", "Retrograde Purification", "Speaker's Decomposition", "Nullary Reflection", "Archer's Distillation", "Maximus Distillation", "Surgeon's Exaltation", "Consideration", "Augur's Purification", "Minimus Distillation", "Integration Distillation", "Swindler's Gambit", "Selection Exaltation", "Vacant Reflection", "Break Block", "Charon's Gambit", "Scribe's Reflection", "Vector Reflection +Y", "Single's Purification", "Power Distillation", "Floor Purification", "Modulus Distillation", "Speaker's Distillation", "Reveal", "Architect's Distillation", "Locator's Distillation", "Conjunction Distillation", "Vector Reflection -Y", "Inequality Distillation", "Vector Reflection Zero", "Negation Purification", "Stadiometer's Purification", "Scribe's Gambit", "Locate Sentinel", "Impulse", "Vector Reflection +X", "Pace Purification", "Chronicler's Purification", "Cosine Purification", "Zone Distillation: Item", "Arc's Reflection", "Axial Purification", "Vector Reflection +Z", "Place Block", "False Reflection", "Summon Greater Sentinel", "Uniqueness Purification", "Greater Teleport", "Inverse Cosine Purification", "Vector Reflection -Z", "Tangent Purification", "Scout's Distillation", "Excisor's Distillation", "Entity Purification", "Zone Distillation: Non-Living", "Disjunction Distillation", "Vector Reflection -X", "Inverse Tangent Distillation", "Inverse Tangent Purification", "True Reflection", "Conjure Block", "Explosion", "Zone Distillation: Non-Item", "Akasha's Distillation", "Chronicler's Gambit", "Akasha's Gambit", "Circle's Reflection", "Conjure Light", "Thanatos' Reflection", "Zone Distillation: Non-Player", "Sine Purification", "Waystone Reflection", "Zone Distillation: Living", "Entity Purification: Living", "Create Water", "Zone Distillation: Non-Animal", "Zone Distillation: Non-Monster", "Entity Purification: Item", "Auditor's Reflection", "Ceiling Purification", "Exclusion Distillation", "Lesser Fold Reflection", "Blink", "Greater Fold Reflection", "Recharge Item", "Banish Sentinel", "Zone Distillation: Monster", "Flay Mind", "White Sun's Zenith", "Iris' Gambit", "Erase Item", "Euler's Reflection", "Derivation Decomposition", "Gulliver's Purification", "Make Note", "Blue Sun's Nadir", "Summon Lightning", "White Sun's Nadir", "Entropy Reflection", "Lodestone Reflection", "Assessor's Reflection", "Auditor's Purification", "Wayfind Sentinel", "Zone Distillation: Player", "Alter Scale", "Altiora", "Anchorite's Flight", "Assessor's Purification", "Aviator's Purification", "Black Sun's Nadir", "Black Sun's Zenith", "Blue Sun's Zenith", "Caster's Glamour", "Compass' Purification II", "Craft Artifact", "Craft Cypher", "Craft Phial", "Craft Trinket", "Create Lava", "Destroy Liquid", "Dispel Rain", "Edify Sapling", "Entity Purification: Animal", "Entity Purification: Monster", "Entity Purification: Player", "Evanition", "Extinguish Area", "Fireball", "Fisherman's Gambit II", "Green Sun's Nadir", "Green Sun's Zenith", "Ignite", "Internalize Pigment", "Inverse Sine Purification", "Logarithmic Distillation", "Maximus Distillation II", "Minimus Distillation II", "Overgrow", "Red Sun's Nadir", "Red Sun's Zenith", "Rotation Gambit II", "Summon Rain", "Summon Sentinel", "Wayfarer's Flight", "Zone Distillation: Animal", "Zone Distillation: Any"];
+use crate::patterns::init_patterns;
 
 /// encodes a file into an 8-bit instruction set and returns the binary of each opcode.
 fn encode(
@@ -33,29 +29,12 @@ fn encode(
     return binary;
 }
 
-/// tests files in paths `{base_path}{0..untilFileNotFound}` to see where the encoder shits itself.
-fn run_tests(
-    base_path: String
-) {
-    let mut i: usize = 0;
-    while fs::exists(format!("{base_path}{i}.hexpattern")).unwrap_or(false) {
-        let path = format!("{base_path}{i}.hexpattern");
-        i += 1;
-
-        if !fs::exists(&path).unwrap_or(false) {
-            println!("Path \"{path}\" is inaccessible. Tests have ended.");
-            break;
-        }
-
-        let _ = encode(&path);
-        println!("Test \"{path}\" successful.");
-    }
-}
-
 /// returns the input file and the output file from the command line.
 fn get_arguments(
     args: &Vec<String>
 ) -> [String; 3] {
+    init_patterns();
+
     let i_option = args.iter().position(|s| s == "-i");
     let o_option = args.iter().position(|s| s == "-o");
     let f_option = args.iter().position(|s| s == "-f");
@@ -145,12 +124,6 @@ fn main() {
         panic!("Input path, \"{input}\", is inaccessible.");
     } else if format != "bin" && format != "octal" && format != "dance" {
         panic!("Cannot output to format \"{format}\". Must be one of: \"bin\", \"octal\", \"dance\".");
-    }
-
-    if args.contains(&String::from("-t")) {
-        run_tests(input);
-        println!("All tests successful!");
-        return;
     }
 
     let encoded = encode(&input);
