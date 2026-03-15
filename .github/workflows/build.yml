@@ -1,4 +1,5 @@
 # lmao
+# needed an LLM to write this for me though, shame.
 name: build
 
 on:
@@ -26,7 +27,7 @@ jobs:
         run: cargo build --release
 
       - name: upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: encoder-${{ matrix.os }}
           path: target/release/encoder*
