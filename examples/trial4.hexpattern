@@ -1,5 +1,6 @@
 // iota embedding!
-/** embed akashic library coords
+/** steps:
+ * embed akashic library coords
  * read pattern
  * run */
 {

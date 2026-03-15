@@ -1,5 +1,5 @@
-// basic pattern-to-binary skillcheck
-// ignite entity (or block if not looking at an entity)
+// pattern-to-binary skillcheck
+// ignite entity, or block if not looking at an entity
 // entity raycast
 Mind's Reflection
 Compass' Purification

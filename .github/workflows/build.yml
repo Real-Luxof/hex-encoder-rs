@@ -1,5 +1,5 @@
 # lmao
-# needed an LLM to write 80% of this for me though, shame.
+# initially needed an LLM to write 75% of this for me though, shame.
 name: build
 
 on:
@@ -22,8 +22,22 @@ jobs:
       - name: build everythin
         run: cargo build --release
 
-      - name: upload
+      - name: upload (linux/mac)
+        if: matrix.os != 'windows-latest'
         uses: actions/upload-artifact@v6
         with:
           name: encoder-${{ matrix.os }}
-          path: target/release/encoder*
+          path: |
+            target/release/encoder
+            need/
+            examples/
+      
+      - name: upload (windows)
+        if: runner.os == 'windows-latest'
+        uses: actions/upload-artifact@v6
+        with:
+          name: encoder-${{ matrix.os }}
+          path: |
+            target/release/encoder.exe
+            need/
+            examples/

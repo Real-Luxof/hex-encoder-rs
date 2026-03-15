@@ -1,7 +1,15 @@
+# hex-encoder-rs
 A (WIP) encoder for [Hex Casting](https://modrinth.com/mod/hex-casting) spell serde by autohotkey assistance or hitting some sick ass moves on that DDR pad (ingame).  
 
-Serde algorithms built in collaboration with **@matt6049**. Huge credits to him, he's basically the brilliant guy behind a lot of this. I would've never conceived it on my own.  
+Serde algorithms built in collaboration with **@Matt6049**. Huge credits to him, he's basically the brilliant guy behind a lot of this. I would've never conceived it on my own.  
 
+# How to use it
+## As a CLI tool
+Pass in `-h`, the program tells you.
+## Normally
+Click it.
+
+# How it works
 The main idea is that a person:
 - gains patterns either through the Hex Casting forums (also known as the [Akashic Records](https://forum.petra-k.at/viewforum.php?f=2)) or through writing a hex and wishes to import the patterns into their Minecraft world,
 - writes patterns into a `.hexpattern` file,

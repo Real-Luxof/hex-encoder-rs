@@ -6,6 +6,7 @@ mod patterns;
 use std::env;
 use std::fs;
 use std::io;
+use std::io::Read;
 
 use crate::encoder_utils::{encode_line, end_op};
 use crate::file_utils::{get_file, translate_to_dance, translate_to_octal};
@@ -33,6 +34,11 @@ fn encode(
 fn get_arguments(
     args: &Vec<String>
 ) -> [String; 3] {
+
+    if args.contains(&String::from("-h")) {
+        print_usage();
+        panic!("Printing help message.");
+    }
 
     let i_option = args.iter().position(|s| s == "-i");
     let o_option = args.iter().position(|s| s == "-o");
@@ -78,6 +84,9 @@ fn print_usage() {
     // ANSI codes, my old friend!
     println!("\x1b[33mUsage example: -i \"path/to/my/file.hexpattern\" -o \"path/to/my/output.txt\" -f octal\x1b[0m");
     println!("Options:");
+    println!("\x1b[1m-h\x1b[0m");
+    println!("    \x1b[1mOPTIONAL.\x1b[0m");
+    println!("    If present, stops everything and gives you this message.");
     println!("\x1b[31m-i <input file path>\x1b[0m");
     println!("    \x1b[1mMANDATORY.\x1b[0m");
     println!("    <input file path>: path to the file to be encoded.");
@@ -87,7 +96,6 @@ fn print_usage() {
     println!("\x1b[34m-f <output format>\x1b[0m");
     println!("    \x1b[1mMANDATORY.\x1b[0m");
     println!("    <output format>: The format to write the encoded output in.");
-    println!("    \x1b[1mCHOICES\x1b[0m");
     println!("            \x1b[1mbin\x1b[0m: outputs a string of 1s and 0s.");
     println!("            \x1b[1moctal\x1b[0m: outputs a string of octal digits (for use with the autohotkey script).");
     println!("            \x1b[1mdance\x1b[0m: outputs lines of dance moves (for use with the dance decoder).");
@@ -103,7 +111,7 @@ fn enable_ansi() {
     }
 }
 
-// mac is sensible right
+// mac is sensible and has colorful terminals right
 #[cfg(not(windows))]
 fn enable_ansi() {}
 
@@ -185,7 +193,10 @@ fn main() {
     }
 
     if output == "" {
-        println!("\nNo output path provided. Shutting down...");
+        println!("\nPress Enter key to continue...");
+        io::stdin().bytes().next();
+        /*let mut _input = String::new();
+        io::stdin().read_line(&mut _input).unwrap();*/
         return;
     }
 
@@ -195,4 +206,9 @@ fn main() {
     } else {
         println!("\nSuccessfully written to output!");
     }
+
+    println!("Press Enter key to continue...");
+    /*let mut _input = String::new();
+    io::stdin().read_line(&mut _input).unwrap();*/
+    io::stdin().bytes().next();
 }
