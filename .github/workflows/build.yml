@@ -1,5 +1,5 @@
 # lmao
-# needed an LLM to write this for me though, shame.
+# needed an LLM to write 80% of this for me though, shame.
 name: build
 
 on:
@@ -17,11 +17,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: get rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: build everythin
         run: cargo build --release
