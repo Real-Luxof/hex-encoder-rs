@@ -22,13 +22,21 @@ jobs:
       - name: build everythin
         run: cargo build --release
 
+      - name: move executable (linux/mac)
+        if: matrix.os != 'windows.latest'
+        run: mv target/release/encoder ./encoder
+
+      - name: move executable (windows)
+        if: matrix.os == 'windows.latest'
+        run: move target/release/encoder encoder
+
       - name: upload (linux/mac)
         if: matrix.os != 'windows-latest'
         uses: actions/upload-artifact@v6
         with:
           name: encoder-${{ matrix.os }}
           path: |
-            target/release/encoder
+            encoder
             need/
             examples/
             README.md
@@ -39,7 +47,7 @@ jobs:
         with:
           name: encoder-${{ matrix.os }}
           path: |
-            target/release/encoder.exe
+            encoder.exe
             need/
             examples/
             README.md
