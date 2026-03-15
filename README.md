@@ -3,11 +3,22 @@ A (WIP) encoder for [Hex Casting](https://modrinth.com/mod/hex-casting) spell se
 
 Serde algorithms built in collaboration with **@Matt6049**. Huge credits to him, he's basically the brilliant guy behind a lot of this. I would've never conceived it on my own.  
 
+# How to get it
+Either:
+- download one of the GitHub releases.
+- compile it yourself through [GitHub actions](https://github.com/Real-Luxof/hex-encoder-rs/actions/workflows/build.yml).
+- do the following:
+    - run `cargo build -r` to build the project in release mode.
+    - your output executable is in `target/releases`
+    - the only folder that is necessary is `needs` in the project root.
+    - put the executable and the `needs` folder in a single folder.
+    - done.
+
 # How to use it
 ## As a CLI tool
-Pass in `-h`, the program tells you.
+Pass in `-h` as an option, and the program will tell you.
 ## Normally
-Click it.
+Click it. Just open the executable.
 
 # How it works
 The main idea is that a person:

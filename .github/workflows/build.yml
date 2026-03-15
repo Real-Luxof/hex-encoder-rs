@@ -31,6 +31,7 @@ jobs:
             target/release/encoder
             need/
             examples/
+            README.md
       
       - name: upload (windows)
         if: matrix.os == 'windows-latest'
@@ -41,3 +42,4 @@ jobs:
             target/release/encoder.exe
             need/
             examples/
+            README.md
