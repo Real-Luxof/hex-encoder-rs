@@ -33,7 +33,7 @@ jobs:
             examples/
       
       - name: upload (windows)
-        if: runner.os == 'windows-latest'
+        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v6
         with:
           name: encoder-${{ matrix.os }}
