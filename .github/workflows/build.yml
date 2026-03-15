@@ -23,11 +23,11 @@ jobs:
         run: cargo build --release
 
       - name: move executable (linux/mac)
-        if: matrix.os != 'windows.latest'
+        if: matrix.os != 'windows-latest'
         run: mv target/release/encoder ./encoder
 
       - name: move executable (windows)
-        if: matrix.os == 'windows.latest'
+        if: matrix.os == 'windows-latest'
         run: move target/release/encoder.exe encoder.exe
 
       - name: upload (linux/mac)
