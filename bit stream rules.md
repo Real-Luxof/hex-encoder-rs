@@ -1,7 +1,7 @@
 # HEADER
 Formatted as `[VERSION][CS][OFFSET][LOCAL MAPPINGS]`
 ### VERSION
-Specifies the version of this encoding.  
+Specifies the version of this encoding. This version of the bit stream rules is written for 1.0.  
 ### CS (4 bits)
 The chunk size. The size of each pattern (before sharing 1s and 0s).  
 Want a 5-bit reduced instruction set? Set this to 5.  

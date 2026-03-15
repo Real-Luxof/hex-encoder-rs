@@ -33,7 +33,6 @@ fn encode(
 fn get_arguments(
     args: &Vec<String>
 ) -> [String; 3] {
-    init_patterns();
 
     let i_option = args.iter().position(|s| s == "-i");
     let o_option = args.iter().position(|s| s == "-o");
@@ -94,7 +93,24 @@ fn print_usage() {
     println!("            \x1b[1mdance\x1b[0m: outputs lines of dance moves (for use with the dance decoder).");
 }
 
+#[cfg(windows)]
+fn enable_ansi() {
+    match enable_ansi_support::enable_ansi_support() {
+        Ok(()) => {}
+        Err(_) => {
+            println!("Could not enable ANSI codes on your terminal. Colors on errs may not exist.");
+        }
+    }
+}
+
+// mac is sensible right
+#[cfg(not(windows))]
+fn enable_ansi() {}
+
 fn main() {
+    enable_ansi();
+    init_patterns();
+
     let args: Vec<String> = env::args().collect();
 
     let mut input = String::new();
