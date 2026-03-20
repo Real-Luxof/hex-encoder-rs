@@ -144,13 +144,9 @@ pub fn translate_to_dance(
         let sneak = &withdrawn[1..2] == "1";
         used_size += 2;
 
-        encoded.push(
-            String::from("\x1b[4m")
-            + &format_move(
-                (lookvec_result.right, movement_result.right, jump, sneak)
-            )
-            + &String::from("\x1b[0m")
-        );
+        encoded.push(format_move(
+            (lookvec_result.right, movement_result.right, jump, sneak)
+        ));
 
         len -= used_size.min(len);
         binary = binary.split_off(used_size.min(len));

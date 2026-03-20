@@ -12,6 +12,8 @@ use crate::encoder_utils::{encode_line, end_op};
 use crate::file_utils::{get_file, translate_to_dance, translate_to_octal};
 use crate::patterns::{init_patterns, patterns_bits};
 
+const OUTPUT_FORMAT_OPTIONS: [&str; 3] = ["bin", "octal", "dance"];
+
 /// encodes a file into an 8-bit instruction set and returns the binary of each opcode.
 fn encode(
     path: &String,
@@ -149,7 +151,8 @@ fn main() {
 
     if !fs::exists(&input).unwrap_or(false) {
         panic!("Input path, \"{input}\", is inaccessible.");
-    } else if format != "bin" && format != "octal" && format != "dance" {
+
+    } else if !OUTPUT_FORMAT_OPTIONS.contains(&format.as_str()) {
         panic!("Cannot output to format \"{format}\". Must be one of: \"bin\", \"octal\", \"dance\".");
     }
 
@@ -164,18 +167,13 @@ fn main() {
     }
 
     if format == "bin" {
-        for line in &encoded {
-            println!("{line}");
-        }
-
+        encoded.iter().for_each(|s| println!("{s}"));
         write = encoded.join("\n");
 
     } else if format == "octal" {
         let display = translate_to_octal(&encoded);
 
-        for octal in &display {
-            print!("{octal}");
-        }
+        display.iter().for_each(|s| print!("{s}"));
         println!();
 
         write = display
@@ -187,23 +185,16 @@ fn main() {
         let display = translate_to_dance(&encoded);
 
         for line in display {
-            println!("{}", &line);
-            write.push_str(
-                line
-                    .strip_prefix("\x1b[4m")
-                    .unwrap()
-                    .strip_suffix("\x1b[0m")
-                    .unwrap()
-            );
-            write.push_str(
-                "\n-----------------------------------------\n"
-            );
+            write.push_str(&line);
+            println!("\x1b[4m{line}\x1b[0m");
+            write.push_str("\n-----------------------------------------\n");
         }
 
     }
 
+    println!();
     if output == "" {
-        println!("\nPress Enter key to continue...");
+        println!("Press Enter key to continue...");
         io::stdin().bytes().next();
         /*let mut _input = String::new();
         io::stdin().read_line(&mut _input).unwrap();*/
@@ -212,9 +203,9 @@ fn main() {
 
     let res = fs::write(output, write);
     if res.is_err() {
-        println!("\nError writing to output: {}", res.unwrap_err());
+        println!("Error writing to output: {}", res.unwrap_err());
     } else {
-        println!("\nSuccessfully written to output!");
+        println!("Successfully written to output!");
     }
 
     println!("Press Enter key to continue...");

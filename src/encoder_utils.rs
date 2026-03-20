@@ -152,17 +152,14 @@ pub fn encode_pattern(
     if *pattern == String::from("") { return Some(vec![]); }
 
     if is_pattern(&pattern) {
-        let padded = pad_0_upto(get_pat_bin(pattern), chunk_size);
-        if padded.is_none() { return None; }
-        return Some(vec![padded.unwrap()]);
+        let padded = pad_0_upto_maybe(get_pat_bin(pattern), chunk_size);
+        return padded.map(|o| vec![o]);
 
     } else if pattern.starts_with("Numerical Reflection: ") {
         if !big_enough_for_embeds(chunk_size) { return None; }
 
         return Some(make_numref(
-            pattern
-                .strip_prefix("Numerical Reflection: ")
-                .unwrap()
+            pattern[22..]
                 .parse()
                 .unwrap(),
             chunk_size
@@ -170,7 +167,7 @@ pub fn encode_pattern(
 
     } else if pattern.starts_with("Bookkeeper's Gambit: ") {
         return Some(make_bk_op(
-            pattern.strip_prefix("Bookkeeper's Gambit: ").unwrap(),
+            &pattern[21..],
             line,
             chunk_size
         ));
@@ -216,6 +213,13 @@ pub fn encode_pattern(
 fn pad_0_upto(
     num: usize,
     chunk_size: u32
+) -> String {
+    pad_0_upto_maybe(num, chunk_size).unwrap()
+}
+
+fn pad_0_upto_maybe(
+    num: usize,
+    chunk_size: u32
 ) -> Option<String> {
     let mut bin = format!("{:b}", num);
     let bits = bin.len();
@@ -251,11 +255,11 @@ fn make_numref(
     chunk_size: u32
 ) -> Vec<String> {
     let mut op = vec![
-        pad_0_upto(get_pat_bin("Introspection"), chunk_size).unwrap()
+        pad_0_upto(get_pat_bin("Introspection"), chunk_size)
     ];
     op.append(&mut embed_num(num, chunk_size));
-    op.push(pad_0_upto(get_pat_bin("Retrospection"), chunk_size).unwrap());
-    op.push(pad_0_upto(get_pat_bin("Flock's Disintegration"), chunk_size).unwrap());
+    op.push(pad_0_upto(get_pat_bin("Retrospection"), chunk_size));
+    op.push(pad_0_upto(get_pat_bin("Flock's Disintegration"), chunk_size));
     return op;
 }
 
@@ -286,7 +290,7 @@ fn make_bk_op(
         bookkeeper.insert(0, '-');
     }
     vec![
-        pad_0_upto(0, chunk_size).unwrap(),
+        pad_0_upto(0, chunk_size),
         bookkeeper_opcode.into(),
         bookkeeper
             .iter()
@@ -318,10 +322,9 @@ fn embed_num(
         num_bin = format!("{:064b}", num.to_bits());
     }
     vec![
-        pad_0_upto(0, chunk_size).unwrap(),
+        pad_0_upto(0, chunk_size),
         opcode.into(),
         num_bin
-        //pad_0_upto(num.to_bits() as usize, 16)
     ]
 }
 
@@ -336,15 +339,15 @@ fn embed_vec(
     chunk_size: u32
 ) -> Vec<String> {
     let mut ret = vec![
-        pad_0_upto(get_pat_bin("Introspection"), chunk_size).unwrap()
+        pad_0_upto(get_pat_bin("Introspection"), chunk_size)
     ];
     ret.append(&mut embed_num(desired.0, chunk_size));
     ret.append(&mut embed_num(desired.1, chunk_size));
     ret.append(&mut embed_num(desired.2, chunk_size));
     ret.append(&mut vec![
-        pad_0_upto(get_pat_bin("Retrospection"), chunk_size).unwrap(),
-        pad_0_upto(get_pat_bin("Flock's Disintegration"), chunk_size).unwrap(),
-        pad_0_upto(get_pat_bin("Vector Exaltation"), chunk_size).unwrap()
+        pad_0_upto(get_pat_bin("Retrospection"), chunk_size),
+        pad_0_upto(get_pat_bin("Flock's Disintegration"), chunk_size),
+        pad_0_upto(get_pat_bin("Vector Exaltation"), chunk_size)
     ]);
     return ret;
 }
@@ -357,14 +360,14 @@ fn try_embed_list(
     let mut ret = None;
 
     if iota == "[" {
-        ret = Some(vec![pad_0_upto(0, chunk_size).unwrap(), LIST_OPCODE.to_string()]);
+        ret = Some(vec![pad_0_upto(0, chunk_size), LIST_OPCODE.to_string()]);
         set_encoder_state(0, get_encoder_state(0) + 1);
 
     } else if iota == "]" {
         if get_encoder_state(0) == 0 {
             panic!("Err at line {line}: list closed without matching left square bracket.");
         }
-        ret = Some(vec![pad_0_upto(0, chunk_size).unwrap(), END_OPCODE.to_string()]);
+        ret = Some(vec![pad_0_upto(0, chunk_size), END_OPCODE.to_string()]);
         set_encoder_state(0, get_encoder_state(0) - 1);
     }
 
