@@ -9,8 +9,12 @@ const EMBED_NUM_OPCODE_I8: &str = "001";
 const EMBED_NUM_OPCODE_F32: &str = "010";
 const EMBED_NUM_OPCODE_DOUBLE: &str = "011";
 const BK_OPCODE_4BIT: &str = "100";
-const BK_OPCODE_8BIT: &str = "101";
-const BK_OPCODE_16BIT: &str = "110";
+const BK_OPCODE_16BIT: &str = "101";
+const EMBED_VEC_OPCODE: &str = "110";
+const EMBED_VEC_I8_OPCODE: &str = "00";
+const EMBED_VEC_F32_OPCODE: &str = "01";
+const EMBED_VEC_DOUBLE_OPCODE: &str = "10";
+// one left...
 const LIST_OPCODE: &str = "111";
 
 /// stores in order:
@@ -173,13 +177,12 @@ pub fn encode_pattern(
         ));
 
     } else if is_embedded_iota(pattern) || get_encoder_state(0) > 0 || pattern == "<[" || pattern == "]>" {
-        if !big_enough_for_embeds(chunk_size) { return None }
 
         let iota = get_embedded_iota(pattern);
 
         let num = iota
             .parse::<f64>()
-            .map(|double| make_numref(double, chunk_size))
+            .map(|double| embed_num(double, chunk_size))
             .ok();
 
         let vec;
@@ -270,15 +273,12 @@ fn make_bk_op(
     if len < 4 {
         len = 4;
         bookkeeper_opcode = BK_OPCODE_4BIT;
-    } else if len < 8 {
-        len = 8;
-        bookkeeper_opcode = BK_OPCODE_8BIT;
     } else if len < 16 {
         len = 16;
         bookkeeper_opcode = BK_OPCODE_16BIT;
     } else {
         // Matt, is that you?
-        panic!("Exceeded max Bookkeeper's Gambit length (maximum = 16, found size = {len}) at line {line}");
+        panic!("Exceeded max Bookkeeper's Gambit length (maximum = 16, found size = {len}) at line {line}.");
     }
 
     while bookkeeper.len() < len { bookkeeper.insert(0, '-'); }
@@ -304,7 +304,7 @@ fn embed_num(
 ) -> Vec<String> {
     let opcode;
     let num_bin;
-    if (num % 1.0).abs() <= f64::MIN_POSITIVE && num <= 255.0 {
+    if is_u8(num) {
         opcode = EMBED_NUM_OPCODE_I8;
         num_bin = format!("{:08b}", num as i8);
     } else if is_f32(num) {
@@ -321,6 +321,12 @@ fn embed_num(
     ]
 }
 
+fn is_u8(
+    num: f64
+) -> bool {
+    (num % 1.0).abs() <= f64::MIN_POSITIVE && num <= 255.0
+}
+
 fn is_f32(
     num: f64
 ) -> bool {
@@ -332,16 +338,23 @@ fn embed_vec(
     chunk_size: u32
 ) -> Vec<String> {
     let mut ret = vec![
-        pad_0_upto(get_pat_bin("Introspection"), chunk_size)
+        pad_0_upto(0, chunk_size),
+        EMBED_VEC_OPCODE.into()
     ];
-    ret.append(&mut embed_num(desired.0, chunk_size));
-    ret.append(&mut embed_num(desired.1, chunk_size));
-    ret.append(&mut embed_num(desired.2, chunk_size));
-    ret.append(&mut vec![
-        pad_0_upto(get_pat_bin("Retrospection"), chunk_size),
-        pad_0_upto(get_pat_bin("Flock's Disintegration"), chunk_size),
-        pad_0_upto(get_pat_bin("Vector Exaltation"), chunk_size)
-    ]);
+    for refnum in [desired.0, desired.1, desired.2].iter() {
+        let num = *refnum;
+        if is_u8(num) {
+            ret.push(EMBED_VEC_I8_OPCODE.into());
+            ret.push(format!("{:08b}", num as i8));
+        } else if is_f32(num) {
+            ret.push(EMBED_VEC_F32_OPCODE.into());
+            ret.push(format!("{:32b}", (num as f32).to_bits()));
+        } else {
+            ret.push(EMBED_VEC_DOUBLE_OPCODE.into());
+            ret.push(format!("{:64b}", num.to_bits()));
+        }
+    }
+
     return ret;
 }
 

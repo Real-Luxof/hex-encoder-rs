@@ -42,15 +42,21 @@ Handling of Numerical Reflection via `{n} flock_disint` is done by the encoder.
 - 001: 8-bit integer.
 - 010: 32-bit float.
 - 011: 64-bit double.
-### 100-110 - Bookkeeper's Gambit
+### 100-101 - Bookkeeper's Gambit
 Instructs the decoder to produce one of these two:
 - a swindler's + bookkeeper. (e.g. `5 swindler bk vv`)
 - a `desired bookkeeper's gambits` (e.g. `bk v--- bk v- bk v`)  
 
 With `N` bits after where `1 = "v"`, `0 = "-"`, and `N` is:
 - when opcode = 100: 4
-- when opcode = 101: 8
-- when opcode = 110: 16
+- when opcode = 101: 16
+### 110 - Vector
+Instructs the decoder to produce a vector iota and add it to the list.  
+Following this instruction are always three pseudo-Embed Number instructions to represent
+the components of the vector.
+- 00: 8-bit integer.
+- 01: 32-bit float.
+- 10: 64-bit double.
 ### 111 - Start list
 does the following:
 - `STATE.LIST_LEVEL += 1`
