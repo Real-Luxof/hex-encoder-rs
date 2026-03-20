@@ -192,7 +192,6 @@ pub fn encode_pattern(
                 .filter_map(|s| s.parse::<f64>().ok())
                 .next_chunk_of(3)
                 .map(|v| embed_vec((v[0], v[1], v[2]), chunk_size));
-
         } else {
             vec = None;
         }
@@ -225,13 +224,9 @@ fn pad_0_upto_maybe(
     let bits = bin.len();
     if bits > chunk_size as usize {
         return None;
-    } else if bits == chunk_size as usize {
-        return Some(bin);
     }
 
-    for _ in 0..(chunk_size - bits as u32) {
-        bin.insert(0, '0');
-    }
+    for _ in 0..(chunk_size - bits as u32) { bin.insert(0, '0'); }
     return Some(bin);
 }
 
@@ -286,9 +281,7 @@ fn make_bk_op(
         panic!("Exceeded max Bookkeeper's Gambit length (maximum = 16, found size = {len}) at line {line}");
     }
 
-    while bookkeeper.len() < len {
-        bookkeeper.insert(0, '-');
-    }
+    while bookkeeper.len() < len { bookkeeper.insert(0, '-'); }
     vec![
         pad_0_upto(0, chunk_size),
         bookkeeper_opcode.into(),
