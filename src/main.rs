@@ -10,24 +10,27 @@ use std::io::Read;
 
 use crate::encoder_utils::{encode_line, end_op};
 use crate::file_utils::{get_file, translate_to_dance, translate_to_octal};
-use crate::patterns::init_patterns;
+use crate::patterns::{init_patterns, patterns_bits};
 
 /// encodes a file into an 8-bit instruction set and returns the binary of each opcode.
 fn encode(
-    path: &String
-) -> Vec<String> {
+    path: &String,
+    chunk_size: u32
+) -> Option<Vec<String>> {
     let file: Vec<String> = get_file(path);
-    let mut line: usize = 0;
-    let mut binary: Vec<String> = file
-        .iter()
-        .flat_map(|s| {
-            line += 1;
-            return encode_line(s, line);
-        })
-        .collect();
 
-    binary.append(&mut end_op());
-    return binary;
+    let binary_opt: Option<Vec<String>> = file
+        .iter()
+        .enumerate()
+        .map(|(i, s)| encode_line(s, i, chunk_size))
+        .collect::<Option<Vec<Vec<String>>>>() // horrid type
+        .map(|o| o.into_iter().flatten().collect());
+
+    if binary_opt.is_none() { return Option::None; }
+    let mut binary = binary_opt.unwrap();
+
+    binary.append(&mut end_op(chunk_size));
+    return Option::Some(binary);
 }
 
 /// returns the input file and the output file from the command line.
@@ -150,8 +153,15 @@ fn main() {
         panic!("Cannot output to format \"{format}\". Must be one of: \"bin\", \"octal\", \"dance\".");
     }
 
-    let encoded = encode(&input);
+    let mut encoded: Vec<String> = vec![];
     let mut write: String = String::new();
+    // https://cdn.discordapp.com/attachments/1467549530894635171/1484382444760203324/image.png?ex=69be0661&is=69bcb4e1&hm=7f501e5bbe4e464a5795363e317dfe6130896347589fafe65cec4048c0cbb8d2&
+    for chunk_size in (1..patterns_bits() as u32 + 1).rev() {
+        let encoded_opt = encode(&input, chunk_size);
+        if encoded_opt.is_some() {
+            encoded = encoded_opt.unwrap();
+        }
+    }
 
     if format == "bin" {
         for line in &encoded {

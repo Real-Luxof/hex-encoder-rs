@@ -1,6 +1,6 @@
 use core::f64;
 
-use crate::patterns::{POPULAR_PATTERNS, is_pattern};
+use crate::patterns::{POPULAR_PATTERNS, big_enough_for_embeds, big_enough_for_vecs, is_pattern};
 use crate::used_types::{Chunked, STRIP};
 
 
@@ -28,20 +28,26 @@ pub fn set_encoder_state(
     unsafe { ENCODER_STATE[idx] = value; }
 }
 
-pub fn end_op() -> Vec<String> { return with_null_byte(END_OPCODE.to_string()) }
+pub fn end_op(chunk_size: u32) -> Vec<String> {
+    with_null_chunk(END_OPCODE.to_string(), chunk_size)
+}
 
-pub fn with_null_byte(
-    opcode: String
+pub fn with_null_chunk(
+    opcode: String,
+    chunk_size: u32
 ) -> Vec<String> {
-    return vec![String::from("00000000"), opcode]
+    let mut null_chunk = String::new();
+    for _ in 0..chunk_size { null_chunk.push('0'); }
+    return vec![null_chunk, opcode];
 }
 
 // why am i magnetically attracted to string processing holy shit
 /// For use in a flatmap.
 pub fn encode_line(
     line_str: &String,
-    line: usize
-) -> Vec<String> {
+    line: usize,
+    chunk_size: u32
+) -> Option<Vec<String>> {
 
     let mut line_patterns: Vec<String> = vec![];
     let mut buffer = String::new();
@@ -71,6 +77,7 @@ pub fn encode_line(
 
             buffer.truncate(buffer.len() - 1);
             let trimmed = buffer.trim();
+
             if get_pat_bin_optional(trimmed).is_none() {
                 line_patterns.push(trimmed.to_string());
             } else if trimmed != "" {
@@ -129,57 +136,77 @@ pub fn encode_line(
         line_patterns.push(line_str.clone());
     }
 
-    return line_patterns.iter().flat_map(|p| encode_pattern_8bit(p, line)).collect();
+    return line_patterns.iter()
+        .map(|p| encode_pattern(p, line, chunk_size))
+        .collect::<Option<Vec<Vec<String>>>>()
+        .map(|v| v.into_iter().flatten().collect());
 }
 
 /// For use in a flatmap.
-pub fn encode_pattern_8bit(
+pub fn encode_pattern(
     pattern: &String,
-    line: usize
-) -> Vec<String> {
+    line: usize,
+    chunk_size: u32
+) -> Option<Vec<String>> {
 
-    if *pattern == String::from("") { return vec![]; }
-    let chunk_size = 8;
+    if *pattern == String::from("") { return Some(vec![]); }
 
     if is_pattern(&pattern) {
-        return vec![pad_0_upto(get_pat_bin(pattern), chunk_size)];
+        let padded = pad_0_upto(get_pat_bin(pattern), chunk_size);
+        if padded.is_none() { return None; }
+        return Some(vec![padded.unwrap()]);
 
     } else if pattern.starts_with("Numerical Reflection: ") {
-        return make_numref(
+        if !big_enough_for_embeds(chunk_size) { return None; }
+
+        return Some(make_numref(
             pattern
                 .strip_prefix("Numerical Reflection: ")
                 .unwrap()
                 .parse()
-                .unwrap()
-        );
-    } else if pattern.starts_with("Bookkeeper's Gambit: ") {
-        return make_bk_op(
-            pattern.strip_prefix("Bookkeeper's Gambit: ").unwrap(),
+                .unwrap(),
             chunk_size
-        )
+        ));
+
+    } else if pattern.starts_with("Bookkeeper's Gambit: ") {
+        return Some(make_bk_op(
+            pattern.strip_prefix("Bookkeeper's Gambit: ").unwrap(),
+            line,
+            chunk_size
+        ));
+
     } else if is_embedded_iota(pattern) || get_encoder_state(0) > 0 || pattern == "<[" || pattern == "]>" {
+        if !big_enough_for_embeds(chunk_size) { return None }
 
         let iota = get_embedded_iota(pattern);
 
         let num = iota
             .parse::<f64>()
-            .map(|double| make_numref(double))
+            .map(|double| make_numref(double, chunk_size))
             .ok();
 
-        let vec = remove_paren_or_blank(&iota)
-            .replace(" ", "")
-            .split(",")
-            .filter_map(|s| s.parse::<f64>().ok())
-            .next_chunk_of(3)
-            .map(|v| embed_vec((v[0], v[1], v[2])));
+        let vec;
+        if remove_paren_or_blank(&iota) != "" {
+            if !big_enough_for_vecs(chunk_size) { return None; }
 
-        let list = try_embed_list(&iota, line);
+            vec = remove_paren_or_blank(&iota)
+                .replace(" ", "")
+                .split(",")
+                .filter_map(|s| s.parse::<f64>().ok())
+                .next_chunk_of(3)
+                .map(|v| embed_vec((v[0], v[1], v[2]), chunk_size));
 
-        return num.unwrap_or_else( ||
+        } else {
+            vec = None;
+        }
+
+        let list = try_embed_list(&iota, line, chunk_size);
+
+        return Some(num.unwrap_or_else( ||
             vec.unwrap_or_else( ||
             list.unwrap_or_else( ||
             panic!("Err at line {line}: Unsupported: {pattern}")
-        )));
+        ))));
 
     } else {
         panic!("Err at line {line}: Unsupported: {pattern}");
@@ -188,17 +215,20 @@ pub fn encode_pattern_8bit(
 
 fn pad_0_upto(
     num: usize,
-    at_least_size: usize
-) -> String {
+    chunk_size: u32
+) -> Option<String> {
     let mut bin = format!("{:b}", num);
-    if bin.len() >= at_least_size {
-        return bin;
+    let bits = bin.len();
+    if bits > chunk_size as usize {
+        return None;
+    } else if bits == chunk_size as usize {
+        return Some(bin);
     }
 
-    for _ in 0..(at_least_size - bin.len()) {
+    for _ in 0..(chunk_size - bits as u32) {
         bin.insert(0, '0');
     }
-    return bin;
+    return Some(bin);
 }
 
 fn get_pat_bin(
@@ -217,20 +247,22 @@ fn get_pat_bin_optional(
 }
 
 fn make_numref(
-    num: f64
+    num: f64,
+    chunk_size: u32
 ) -> Vec<String> {
     let mut op = vec![
-        pad_0_upto(get_pat_bin("Introspection"), 8)
+        pad_0_upto(get_pat_bin("Introspection"), chunk_size).unwrap()
     ];
-    op.append(&mut embed_num(num));
-    op.push(pad_0_upto(get_pat_bin("Retrospection"), 8));
-    op.push(pad_0_upto(get_pat_bin("Flock's Disintegration"), 8));
+    op.append(&mut embed_num(num, chunk_size));
+    op.push(pad_0_upto(get_pat_bin("Retrospection"), chunk_size).unwrap());
+    op.push(pad_0_upto(get_pat_bin("Flock's Disintegration"), chunk_size).unwrap());
     return op;
 }
 
 fn make_bk_op(
     desired: &str,
-    line: usize
+    line: usize,
+    chunk_size: u32
 ) -> Vec<String> {
     let mut bookkeeper: Vec<char> = desired.chars().collect();
     let mut len: usize = desired.chars().count();
@@ -254,7 +286,7 @@ fn make_bk_op(
         bookkeeper.insert(0, '-');
     }
     vec![
-        pad_0_upto(0, 8),
+        pad_0_upto(0, chunk_size).unwrap(),
         bookkeeper_opcode.into(),
         bookkeeper
             .iter()
@@ -270,7 +302,8 @@ fn make_bk_op(
 }
 
 fn embed_num(
-    num: f64
+    num: f64,
+    chunk_size: u32
 ) -> Vec<String> {
     let opcode;
     let num_bin;
@@ -285,7 +318,7 @@ fn embed_num(
         num_bin = format!("{:064b}", num.to_bits());
     }
     vec![
-        pad_0_upto(0, 8),
+        pad_0_upto(0, chunk_size).unwrap(),
         opcode.into(),
         num_bin
         //pad_0_upto(num.to_bits() as usize, 16)
@@ -296,45 +329,42 @@ fn is_f32(
     num: f64
 ) -> bool {
     (num - (num as f32 as f64)).abs() <= f64::MIN_POSITIVE
-    /*let bits_string =format!("{0:64b}", num.to_bits());
-    dbg!(&bits_string);
-    let bits = bits_string.as_str();
-    dbg!(&bits[1..4]);
-    dbg!(bits[1..4].contains('1'));
-    dbg!(&bits[35..64]);
-    dbg!(bits[35..64].contains('1'));
-    !bits[1..4].contains('1') && !bits[35..64].contains('1')*/
 }
 
 fn embed_vec(
-    desired: (f64, f64, f64)
+    desired: (f64, f64, f64),
+    chunk_size: u32
 ) -> Vec<String> {
-    let mut ret = vec![];
-    ret.push(pad_0_upto(get_pat_bin("Introspection"), 8));
-    ret.append(&mut embed_num(desired.0));
-    ret.append(&mut embed_num(desired.1));
-    ret.append(&mut embed_num(desired.2));
-    ret.push(pad_0_upto(get_pat_bin("Retrospection"), 8));
-    ret.push(pad_0_upto(get_pat_bin("Flock's Disintegration"), 8));
-    ret.push(pad_0_upto(get_pat_bin("Vector Exaltation"), 8));
+    let mut ret = vec![
+        pad_0_upto(get_pat_bin("Introspection"), chunk_size).unwrap()
+    ];
+    ret.append(&mut embed_num(desired.0, chunk_size));
+    ret.append(&mut embed_num(desired.1, chunk_size));
+    ret.append(&mut embed_num(desired.2, chunk_size));
+    ret.append(&mut vec![
+        pad_0_upto(get_pat_bin("Retrospection"), chunk_size).unwrap(),
+        pad_0_upto(get_pat_bin("Flock's Disintegration"), chunk_size).unwrap(),
+        pad_0_upto(get_pat_bin("Vector Exaltation"), chunk_size).unwrap()
+    ]);
     return ret;
 }
 
 fn try_embed_list(
     iota: &String,
-    line: usize
+    line: usize,
+    chunk_size: u32
 ) -> Option<Vec<String>> {
     let mut ret = None;
 
     if iota == "[" {
-        ret = Some(vec![pad_0_upto(0, 8), LIST_OPCODE.to_string()]);
+        ret = Some(vec![pad_0_upto(0, chunk_size).unwrap(), LIST_OPCODE.to_string()]);
         set_encoder_state(0, get_encoder_state(0) + 1);
 
     } else if iota == "]" {
         if get_encoder_state(0) == 0 {
             panic!("Err at line {line}: list closed without matching left square bracket.");
         }
-        ret = Some(vec![pad_0_upto(0, 8), END_OPCODE.to_string()]);
+        ret = Some(vec![pad_0_upto(0, chunk_size).unwrap(), END_OPCODE.to_string()]);
         set_encoder_state(0, get_encoder_state(0) - 1);
     }
 

@@ -7,19 +7,18 @@ The chunk size. The size of each pattern (before sharing 1s and 0s).
 Want a 5-bit reduced instruction set? Set this to 5.  
 Minimum is 5 bits (0000 = 5 bits).  
 No defined maximum.  
-(Note: the total number of possible patterns is actually CS^2-1 for the null byte.)
+(Note: the total number of possible patterns is actually CS^2-1 for the null chunk.)
 ### OFFSET (4 bits)
 Used with the Local Mappings.  
 Root = (offset)(2^CS)
 ### LOCAL MAPPINGS (algorithm knows)
 Local mappings, given by the Matt-cat algorithm.  
-Local mappings are a bunch of eight-bit patterns, which are taken by the decoder  
+Local mappings are a bunch of 8-bit patterns, which are taken by the decoder  
 and mapped to `CS`-bit ones.  For example, if `Zone Distillation: Any` is not in the  
-current instruction set, it's 8-bit address is added to the local mappings.  
+current instruction set, its 8-bit address is added to the local mappings.  
 Of course, there is a point beyond which local mappings bloat the hex more than  
 stepping up an instruction set would. It is the encoder's task to figure out the  
 optimal configuration.  
-See `trail1.txt` for a limited example of how to encode and decode in the algorithm.  
 
 
 
@@ -28,7 +27,7 @@ Mainly composed of PATTERNS. May also contain INSTRUCTIONS.
 ## PATTERNS
 Literally just list patterns lmfao.
 ## INSTRUCTIONS
-All instructions start with a null byte.  
+All instructions start with a null chunk.  
 After that, there are three bits that say what instruction is being given.  
 ### 000 - End (stream/list)
 if `STATE.LIST_LEVEL` > 0:  

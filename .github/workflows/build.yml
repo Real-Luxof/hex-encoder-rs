@@ -26,6 +26,8 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: mv target/release/encoder ./encoder
 
+      # bein fr i never use powershell like ever
+      # i only use command prompt
       - name: move executable (windows)
         if: matrix.os == 'windows-latest'
         run: move target/release/encoder.exe encoder.exe
