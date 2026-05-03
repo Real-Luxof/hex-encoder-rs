@@ -1,3 +1,8 @@
+use std::{error::Error, fmt::{Debug, Display, Formatter, Result}};
+
+pub struct EncodingError {
+    pub msg: String
+}
 
 pub struct Iter<T: Clone> {
     inner: Vec<T>
@@ -7,6 +12,23 @@ pub struct Pair<T1, T2> {
     pub left: T1,
     pub right: T2
 }
+
+impl EncodingError {
+    pub fn print(&self, f: &mut Formatter<'_>) -> Result {
+        f.write_str(("Error: ".to_string() + &self.msg).as_str())
+    }
+}
+impl Display for EncodingError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        self.print(f)
+    }
+}
+impl Debug for EncodingError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        self.print(f)
+    }
+}
+impl Error for EncodingError {}
 
 impl<T1: Clone, T2: Clone> Pair<T1, T2> {
     pub fn convert<U1: From<T1>, U2: From<T2>>(&self) -> Pair<U1, U2> {
@@ -39,7 +61,7 @@ pub trait STRIP {
 impl<T: Clone, I: Iterator<Item = T>> Chunked<T> for I {
     fn next_chunk_of(&mut self, size: usize) -> Option<Vec<T>> {
         let mut whole = vec![];
-        
+
         for _ in 0..size {
             let next = self.next();
             if next.is_none() { return None; }

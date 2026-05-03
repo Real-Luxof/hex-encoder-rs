@@ -1,24 +1,20 @@
 # HEADER
 Formatted as `[VERSION][CS][OFFSET][LOCAL MAPPINGS]`
-### VERSION
-Specifies the version of this encoding. This version of the bit stream rules is written for 1.0.  
+### VERSION (8 bits)
+Specifies the version of this encoding. This version of the bit stream rules is written for `0`.  
 ### CS (4 bits)
 The chunk size. The size of each pattern (before sharing 1s and 0s).  
 Want a 5-bit reduced instruction set? Set this to 5.  
-Minimum is 5 bits (0000 = 5 bits).  
+~~Minimum is 5 bits (0000 = 5 bits).~~  
 No defined maximum.  
 (Note: the total number of possible patterns is actually CS^2-1 for the null chunk.)
-### OFFSET (4 bits)
-Used with the Local Mappings.  
-Root = (offset)(2^CS)
-### LOCAL MAPPINGS (algorithm knows)
-Local mappings, given by the Matt-cat algorithm.  
-Local mappings are a bunch of 8-bit patterns, which are taken by the decoder  
-and mapped to `CS`-bit ones.  For example, if `Zone Distillation: Any` is not in the  
-current instruction set, its 8-bit address is added to the local mappings.  
-Of course, there is a point beyond which local mappings bloat the hex more than  
-stepping up an instruction set would. It is the encoder's task to figure out the  
-optimal configuration.  
+### LOCAL MAPPINGS
+Local mappings are a bunch of 8-bit patterns, which are taken by the decoder and mapped to  
+`CS`-bit ones. For example, if `Zone Distillation: Any` isn't in the current instr set, its  
+8-bit address is added to the local mappings. An 8-bit number is present at the start to tell  
+the decoder how many local mappings there are. Of course, there is a point beyond which local  
+mappings bloat the hex more than stepping up an instruction set would. It's the encoder's  
+job to figure out the optimal configuration.
 
 
 
