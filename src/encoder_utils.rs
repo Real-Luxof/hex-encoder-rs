@@ -143,7 +143,9 @@ pub fn tokens_to_binary(
     let addresses = (2_isize.pow(chunk_size) - 2).max(0) as usize;
 
     let mut local_mappings: Vec<String> = unique_patterns.iter()
-        .filter(|p| get_pat_bin(p) >= addresses)
+        .filter(|p| {
+            get_pat_bin(p) >= addresses
+        })
         .map(|p| p.clone())
         .collect();
 
@@ -218,7 +220,11 @@ pub fn tokens_to_binary(
             .flat_map(|v|
                 if v.len() > 1 { v }
                 else {
-                    if let Some(i) = local_mappings.iter().position(|a| a == &v[0]) {
+                    if let Some(i) = local_mappings.iter().position(
+                        |a| {
+                            pad_0_upto(get_pat_bin(a), chunk_size) == v[0]
+                        }
+                    ) {
                         vec![pad_0_upto(i + local_mappings_start_at, chunk_size)]
                     } else {
                         v
@@ -338,7 +344,7 @@ fn pad_0_upto(
 ) -> String {
     let mut bin = format!("{:b}", num);
     let bits = bin.len();
-    if bits > chunk_size as usize {
+    if bits >= chunk_size as usize {
         // intentional, so that local mappings can deal with this later
         return bin;
     }
