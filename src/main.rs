@@ -16,21 +16,29 @@ use std::env;
 use std::fs;
 
 use crate::encoder_utils::find_unique_patterns;
+use crate::encoder_utils::preprocess_file;
 use crate::encoder_utils::tokens_to_binary;
 use crate::encoder_utils::{tokenize_file};
 use crate::file_utils::{get_file, translate_to_dance, translate_to_octal};
 use crate::patterns::{patterns_bits};
+use crate::used_types::EncodingError;
 use crate::used_types::Promptable;
 
 const OUTPUT_FORMAT_OPTIONS: [&str; 3] = ["bin", "octal", "dance"];
+
+fn get_tokens(
+    path: &String
+) -> Result<Vec<String>, EncodingError> {
+    tokenize_file(preprocess_file(get_file(path))?)
+}
 
 /// encodes a file into an 8-bit instruction set and returns the binary of each opcode.
 fn encode(
     path: &String
 ) -> Vec<String> {
-    let tokens: Vec<String> = match tokenize_file(get_file(path).join("\n")) {
-        Ok(t) => t,
-        Err(err) => panic!("{err}")
+    let tokens: Vec<String> = match get_tokens(path) {
+        Ok(val) => val,
+        Err(e) => panic!("{e}")
     };
     let unique_patterns = find_unique_patterns(&tokens);
 
@@ -44,14 +52,19 @@ fn encode(
             &unique_patterns,
             i
         ) {
-            Ok(binary_and_lm) => {
-                let contender = binary_and_lm.0;
-                let points = contender.join("").len();
+            Ok(opt) => {
+                match opt {
+                    Some(binary_and_lm) => {
+                        let contender = binary_and_lm.0;
+                        let points = contender.join("").len();
 
-                if points < strongest_contender_points {
-                    strongest_contender = contender;
-                    strongest_contender_points = points;
-                }
+                        if points < strongest_contender_points {
+                            strongest_contender = contender;
+                            strongest_contender_points = points;
+                        }
+                    },
+                    None => continue
+                };
             },
             Err(err) => panic!("{err}")
         };

@@ -1,0 +1,23 @@
+#define Jone's Exaltation (NORTH_WEST waqeqawaww) = [any], any, any -> [any]
+/// Pops the iota at the top of the stack, then takes a second iota, and replaces the first occurence
+/// of the second iota in the list at the top of the stack with the first iota.
+/// Indiana Jones approves.
+{
+    Rotation Gambit II
+    Prospector's Gambit
+    Rotation Gambit II
+    Locator's Distillation
+    Surgeon's Exaltation
+    Rotation Gambit
+    Surgeon's Exaltation
+}
+
+{
+    <25>
+    <(6, 6, 6)>
+    Mind's Reflection
+    Compass' Purification
+}
+Consideration: Mind's Reflection
+Consideration: Compass' Purification
+Jone's Exaltation

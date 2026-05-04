@@ -1,13 +1,15 @@
 use core::f64;
-use regex::Regex;
+use regex::{Captures, Regex};
 use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 
 use crate::patterns::{POPULAR_PATTERNS, is_pattern, is_special_handler};
 use crate::used_types::{EncodingError, STRIP};
 
-const ENCODING_VERSION: LazyLock<String> = LazyLock::new(|| String::from("00000000"));
+const LAZY_MACRO_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"#define (?:[^\s]+ )+\([^\s]+ [^\s]+\) = .+").unwrap());
+const STRICT_MACRO_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"#define (?P<name>(?: ?[a-zA-Z0-9']+)+) \((?P<startdir>NORTH_?WEST|NORTH_?EAST|SOUTH_?WEST|SOUTH_?EAST|N_?E|N_?W|S_?E|S_?W) (?<sig>[qwead]+)\) = (?P<inputs>[^→\->]+) -> (?P<outputs>.+)").unwrap());
+
 const EMBEDDED_IOTA_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(?:<\[(?:.|\n)*\]>|<-?\d+(\.\d+)?>|<\(\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*\)>)$").unwrap());
 const EMBEDDED_LIST_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<\[(?:.|\n)*\]>").unwrap());
 const IOTA_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(?:\[(?:.|\n)*\]|\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)|-?\d+(?:\.\d+)?)").unwrap());
@@ -16,6 +18,10 @@ const VEC_IOTA_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\(\s*(-?\
 const NUM_IOTA_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^-?\d+(?:\.\d+)?$").unwrap());
 const BK_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^Bookkeeper's Gambit: [v-]+$").unwrap());
 const NUMREF_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^Numerical Reflection: -?\d+(?:\.\d+)?$").unwrap());
+
+const COMMENT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\/\/.*\n|\/\*(?:.|\s)*\*\/").unwrap());
+
+const ENCODING_VERSION: LazyLock<String> = LazyLock::new(|| String::from("00000000"));
 const END_OPCODE: &str = "000";
 const EMBED_NUM_OPCODE_I8: &str = "001";
 const EMBED_NUM_OPCODE_F32: &str = "010";
@@ -28,27 +34,154 @@ const EMBED_VEC_F32_OPCODE: &str = "01";
 const EMBED_VEC_DOUBLE_OPCODE: &str = "10";
 const LIST_OPCODE: &str = "111";
 
+pub fn preprocess_file(
+    file: String
+) -> Result<String, EncodingError> {
+
+    let mut new_file: String = COMMENT_REGEX.replace_all(
+        &(file
+            .replace("Consideration: ", "Consideration\n")
+            .replace("Introspection", "{")
+            .replace("Retrospection", "}")
+        ),
+        ""
+    )
+        .split("\n")
+        .map(|s| s.trim().to_string())
+        .collect::<Vec<String>>()
+        .join("\n");
+
+    let mut macros: Vec<String> = vec![];
+    let mut captures: Vec<Captures> = vec![];
+    let mut eventual_err_msg = String::new();
+
+    LAZY_MACRO_REGEX.find_iter(&file)
+        .map(|m| STRICT_MACRO_REGEX.captures(m.as_str())
+            .ok_or(EncodingError {
+                msg: format!("Not a valid macro definition: {}", m.as_str())
+            })
+        )
+        .map(|r| {
+            match r {
+                Ok(c) => {
+                    let name = c["name"].to_string();
+                    if macros.contains(&name) {
+                        Err(EncodingError {
+                            msg: format!("Macro \"{name}\" already exists, yet it was defined again.")
+                        })
+                    } else {
+                        macros.push(name);
+                        captures.push(c);
+                        Ok(true)
+                    }
+                },
+                Err(e) => Err(e)
+            }
+        })
+        .for_each(|r| {
+            match r {
+                Ok(_) => {},
+                Err(e) => eventual_err_msg += &(e.msg + "\n"),
+            }
+        });
+
+    if eventual_err_msg.len() > 0 {
+        return Err(EncodingError { msg: eventual_err_msg });
+    }
+
+    let mut macro_bodies: HashMap<String, String> = HashMap::new();
+    let mut macro_definitions: Vec<String> = vec![];
+
+    for capture in captures {
+        let name = capture["name"].to_string();
+        let m = capture.get_match();
+        let mut activated = false;
+        let mut finished = false;
+        let mut nest = 0_usize;
+        // fuckass carriage return...
+        let mut definition = String::from(&new_file[m.start()..m.end()]);
+        let mut body = String::new();
+
+        for chr in new_file[m.end()..].chars() {
+            definition.push(chr);
+            match chr {
+                '{' => {
+                    if activated {
+                        body.push(chr);
+                    } else { activated = true; }
+                    nest += 1;
+                },
+                '}' => {
+                    if nest == 1 {
+                        if !activated {
+                            return Err(EncodingError {
+                                msg: format!("Unbalanced intro-retros in macro \"{name}\"'s declaration - too many Retrospections.")
+                            });
+                        } else {
+                            finished = true;
+                            break;
+                        }
+                    }
+                    nest -= 1;
+                    body.push(chr);
+                },
+                '\n' => {
+                    if activated {
+                        body.push(chr);
+                    }
+                },
+                _ => {
+                    if activated {
+                        body.push(chr);
+                    } else {
+                        return Err(EncodingError {
+                            msg: format!("There was (literally anything other than newlines and comments) between macro \"{name}\"'s declaration and definition.")
+                        })
+                    }
+                }
+            }
+        }
+
+        if !activated {
+            return Err(EncodingError {
+                msg: format!("Macro \"{name}\" is declared but never defined.")
+            })
+        } else if !finished {
+            return Err(EncodingError {
+                msg: format!("Macro \"{name}\" is declared but its definition is never closed.")
+            })
+        }
+
+        macro_definitions.push(definition);
+        macro_bodies.insert(name, body);
+    }
+
+    for def in macro_definitions {
+        new_file = new_file.replace(&def, "");
+    }
+    for name_and_body in macro_bodies.into_iter() {
+        new_file = new_file.replace(&name_and_body.0, &name_and_body.1);
+    }
+
+    Ok(new_file)
+}
+
 pub fn tokenize_file(
     file: String,
 ) -> Result<Vec<String>, EncodingError> {
     let mut tokens: Vec<String> = vec![];
 
-    let replaced_file = file
-        .replace("Consideration: ", "Consideration\n")
-        .replace("Introspection", "{")
-        .replace("Retrospection", "}");
-
     // once again, why do i have to bind the regex
     let mut preprocessed_file = {
         let mut last_end = 0;
         let mut parts = vec![];
-        EMBEDDED_LIST_REGEX.find_iter(&replaced_file)
+        EMBEDDED_LIST_REGEX.find_iter(&file)
             .for_each(|m| {
-                parts.append(&mut replaced_file[last_end..m.start()].split("\n").collect());
-                parts.push(replaced_file[m.start()..m.end()+1].trim());
+                parts.append(&mut file[last_end..m.start()].split("\n").collect());
+                parts.push(file[m.start()..m.end()+1].trim());
                 last_end = m.end();
             });
-        parts.append(&mut replaced_file[last_end..replaced_file.len()].split("\n").collect());
+        parts.append(&mut file[last_end..file.len()].split("\n").collect());
         parts.into_iter()
     };
 
@@ -139,7 +272,7 @@ pub fn tokens_to_binary(
     tokens: &Vec<String>,
     unique_patterns: &HashSet<String>,
     chunk_size: u32
-) -> Result<(Vec<String>, Vec<String>), EncodingError> {
+) -> Result<Option<(Vec<String>, Vec<String>)>, EncodingError> {
     let addresses = (2_isize.pow(chunk_size) - 2).max(0) as usize;
 
     let mut local_mappings: Vec<String> = unique_patterns.iter()
@@ -148,7 +281,10 @@ pub fn tokens_to_binary(
         })
         .map(|p| p.clone())
         .collect();
+    
+    if addresses <= local_mappings.len() { return Ok(None); }
 
+    // i feel like this might bite me in the ass later
     let local_mappings_start_at = {
         let threshold = addresses - local_mappings.len();
         let mut extras = 0;
@@ -215,7 +351,7 @@ pub fn tokens_to_binary(
         END_OPCODE.to_string()
     ]);
 
-    Ok((
+    Ok(Some((
         binary.into_iter()
             .flat_map(|v|
                 if v.len() > 1 { v }
@@ -233,7 +369,7 @@ pub fn tokens_to_binary(
             )
             .collect(),
         local_mappings
-    ))
+    )))
 }
 
 fn iota_to_binary(
