@@ -3,16 +3,24 @@ mod file_utils;
 mod used_types;
 mod patterns;
 
+use device_query::DeviceState;
+use device_query::Keycode;
+use enigo::Button;
+use enigo::Direction;
+use enigo::Enigo;
+use enigo::Key;
+use enigo::Keyboard;
+use enigo::Mouse;
+use enigo::Settings;
 use std::env;
 use std::fs;
-use std::io;
-use std::io::Read;
 
 use crate::encoder_utils::find_unique_patterns;
 use crate::encoder_utils::tokens_to_binary;
 use crate::encoder_utils::{tokenize_file};
 use crate::file_utils::{get_file, translate_to_dance, translate_to_octal};
 use crate::patterns::{patterns_bits};
+use crate::used_types::Promptable;
 
 const OUTPUT_FORMAT_OPTIONS: [&str; 3] = ["bin", "octal", "dance"];
 
@@ -54,52 +62,31 @@ fn encode(
 
 /// returns the input file and the output file from the command line.
 fn get_arguments(
-    args: &Vec<String>
-) -> [String; 3] {
+    args: Vec<String>,
+    fulfill: Vec<&str>
+) -> Vec<Option<String>> {
 
     if args.contains(&String::from("-h")) {
         print_usage();
         panic!("Printing help message.");
     }
 
-    let i_option = args.iter().position(|s| s == "-i");
-    let o_option = args.iter().position(|s| s == "-o");
-    let f_option = args.iter().position(|s| s == "-f");
-    let i;
-    let o;
-    let f;
-
-    if i_option.is_none() || f_option.is_none() {
-        print_usage();
-        panic!("Missing mandatory options.");
+    let mut given: Vec<Option<String>> = vec![];
+    let mut fulfilled: Vec<&str> = vec![];
+    for arg in &fulfill {
+        given.push(
+            args.iter().position(|s| s == arg)
+                .and_then(|i| args.get(i + 1))
+                .and_then(|s| {
+                    if (&fulfill).contains(&s.as_str()) {
+                        panic!("Options must be followed by their arguments, not other options.");
+                    }
+                    Some(s)
+                } )
+                .and_then(|s| { fulfilled.push(arg); Some(s.clone()) })
+        );
     }
-
-    i = i_option.unwrap();
-    o = o_option.unwrap_or(0);
-    f = f_option.unwrap();
-
-    if o_option.is_some() {
-        if i.abs_diff(o) == 1
-            || o.abs_diff(f) == 1
-            || (o + 1) >= args.len()
-        {
-            print_usage();
-            panic!("Options must be followed by their arguments, not other options.");
-        }
-    }
-    if i.abs_diff(f) == 1
-        || (i + 1) >= args.len()
-        || (f + 1) >= args.len()
-    {
-        print_usage();
-        panic!("Options must be followed by their arguments, not other options.");
-    }
-
-    return [
-        args[i + 1].clone(),
-        if o_option.is_some() { args[o + 1].clone() } else { String::new().clone() },
-        args[f + 1].clone()
-    ];
+    given
 }
 
 fn print_usage() {
@@ -107,20 +94,20 @@ fn print_usage() {
     println!("\x1b[33mUsage example: -i \"path/to/my/file.hexpattern\" -o \"path/to/my/output.txt\" -f octal\x1b[0m");
     println!("Options:");
     println!("\x1b[1m-h\x1b[0m");
-    println!("    \x1b[1mOPTIONAL.\x1b[0m");
     println!("    If present, stops everything and gives you this message.");
     println!("\x1b[31m-i <input file path>\x1b[0m");
-    println!("    \x1b[1mMANDATORY.\x1b[0m");
     println!("    <input file path>: path to the file to be encoded.");
     println!("\x1b[32m-o <output file path>\x1b[0m");
-    println!("    \x1b[1mOPTIONAL.\x1b[0m");
     println!("    <output file path>: path to the file to write the encoded output to.");
     println!("\x1b[34m-f <output format>\x1b[0m");
-    println!("    \x1b[1mMANDATORY.\x1b[0m");
     println!("    <output format>: The format to write the encoded output in.");
     println!("            \x1b[1mbin\x1b[0m: outputs a string of 1s and 0s.");
-    println!("            \x1b[1moctal\x1b[0m: outputs a string of octal digits (for use with the autohotkey script).");
+    println!("            \x1b[1moctal\x1b[0m: outputs a string of octal digits (for use with the macro).");
     println!("            \x1b[1mdance\x1b[0m: outputs lines of dance moves (for use with the dance decoder).");
+    println!("    To disable the prompt on unfulfilled argument, you can provide an empty string (\"\") to this option.");
+    println!("\x1b[35m-p <Y/n>\x1b[0m");
+    println!("    <Y/n>: Y or N. Case-insensitive. Yes or no to pasting in the octals for your decoder when you next press F6.");
+    println!("    Can only be used if output format is octal.");
 }
 
 #[cfg(windows)]
@@ -137,33 +124,48 @@ fn enable_ansi() {
 #[cfg(not(windows))]
 fn enable_ansi() {}
 
+fn wait_for_keys(
+    device_state: &DeviceState,
+    keys: Vec<Keycode>
+) -> Keycode {
+    loop {
+        for pressed_key in device_state.query_keymap() {
+            if keys.contains(&pressed_key) {
+                return pressed_key;
+            }
+        }
+    }
+}
+
 fn main() {
     enable_ansi();
 
     let args: Vec<String> = env::args().collect();
 
-    let mut input = String::new();
-    let mut output = String::new();
-    let mut format = String::new();
-
-    if args.len() > 1 {
-        let io = get_arguments(&args);
-        input = io[0].clone();
-        output = io[1].clone();
-        format = io[2].clone();
-    } else {
-        println!("Path to input file >");
-        io::stdin().read_line(&mut input).expect("Could not read input path.");
-        println!("Path to output file (you may leave this empty) >");
-        io::stdin().read_line(&mut output).expect("Could not read output path.");
-        println!("Output format (\"bin\", \"octal\", \"dance\") >");
-        io::stdin().read_line(&mut format).expect("Could not read output format.");
-
-        // mfw \r\n
-        input.truncate(input.len() - 2);
-        output.truncate(output.len() - 2);
-        format.truncate(format.len() - 2);
-    }
+    let inputs = get_arguments(args, vec!["-i", "-o", "-f", "-p"]);
+    let input = inputs[0].or_else_ask("Path to input file >");
+    let output = inputs[1].or_else_ask("Path to output file (may be left empty) >");
+    let format = {
+        let f = inputs[2].or_else_ask(
+            "Output format (\"bin\", \"octal\", or \"dance\") >"
+        );
+        if f != "bin" && f != "octal" && f != "dance" {
+            panic!("Format must be \"bin\", \"octal\", or \"dance\".");
+        }
+        f
+    };
+    let paste: bool = if format == "octal" {
+        let p = inputs[3].or_else_ask(
+            "Would you like the program to paste the output for your decoder (with right clicks!) when you next press F6? (Y/n) >"
+        ).to_ascii_lowercase();
+        if p == "y" {
+            true
+        } else if p == "n" {
+            false
+        } else {
+            panic!("The input to this option must be Y or N (case-insensitive).");
+        }
+    } else { false };
 
     if !fs::exists(&input).unwrap_or(false) {
         panic!("Input path, \"{input}\", is inaccessible.");
@@ -200,13 +202,40 @@ fn main() {
         }
 
     }
-
     println!();
+
+    let device_state = DeviceState::new();
+    let mut enigo = Enigo::new(&Settings::default()).unwrap();
+
+    if paste {
+        println!("Waiting for you to press F6...");
+        wait_for_keys(&device_state, vec![Keycode::F6]);
+
+        for key in write.chars() {
+            enigo.key(
+                Key::from(
+                    match key {
+                        '0' => Key::Num0,
+                        '1' => Key::Num1,
+                        '2' => Key::Num2,
+                        '3' => Key::Num3,
+                        '4' => Key::Num4,
+                        '5' => Key::Num5,
+                        '6' => Key::Num6,
+                        '7' => Key::Num7,
+                        _ => panic!("You're not supposed to be here.")
+                    }
+                ),
+                Direction::Click
+            ).unwrap();
+            enigo.button(Button::Right, Direction::Click).unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(150));
+        }
+    }
+
     if output == "" {
         println!("Press Enter key to continue...");
-        io::stdin().bytes().next();
-        /*let mut _input = String::new();
-        io::stdin().read_line(&mut _input).unwrap();*/
+        wait_for_keys(&device_state, vec![Keycode::Enter]);
         return;
     }
 
@@ -218,7 +247,5 @@ fn main() {
     }
 
     println!("Press Enter key to continue...");
-    /*let mut _input = String::new();
-    io::stdin().read_line(&mut _input).unwrap();*/
-    io::stdin().bytes().next();
+    wait_for_keys(&device_state, vec![Keycode::Enter]);
 }

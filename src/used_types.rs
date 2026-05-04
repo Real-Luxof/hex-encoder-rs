@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::{Debug, Display, Formatter, Result}};
+use std::{error::Error, fmt::{Debug, Display, Formatter, Result}, io};
 
 pub struct EncodingError {
     pub msg: String
@@ -50,6 +50,10 @@ pub trait Chunked<T: Clone> {
     fn chunks_of(&mut self, size: usize) -> Iter<Vec<T>>;
 }
 
+pub trait Promptable<T> {
+    fn or_else_ask(&self, prompt: &str) -> T;
+}
+
 // woah, at least take me out to dinner first
 // vscode autofill is the funniest shit ever: ", encoder_utils.rs, before you start writing all over me with your string processing and your binary conversions and your stateful encoder state and your pattern matching and your flatmaps and your chunking and your whatever the fuck else you have in store for me, encoder_utils.rs. at least let me put on a nice dress and do my hair before you start writing all over me with your string processing and your binary conversions and your stateful encoder state and your pattern matching and your flatmaps and your chunking and your whatever the"
 pub trait STRIP {
@@ -79,6 +83,21 @@ impl<T: Clone, I: Iterator<Item = T>> Chunked<T> for I {
             chunk_opt = self.next_chunk_of(size);
         }
         return Iter { inner: ret };
+    }
+}
+
+impl Promptable<String> for Option<String> {
+    fn or_else_ask(&self, prompt: &str) -> String {
+        match self {
+            Some(value) => value.clone(),
+            None => {
+                let mut ret = String::new();
+                println!("{prompt}");
+                io::stdin().read_line(&mut ret).expect("Could not read input path.");
+                ret.truncate(ret.len() - 2); // carriage return and newline
+                ret
+            }
+        }
     }
 }
 
