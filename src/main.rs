@@ -215,14 +215,14 @@ fn main() {
             enigo.key(
                 Key::from(
                     match key {
-                        '0' => Key::Num0,
-                        '1' => Key::Num1,
-                        '2' => Key::Num2,
-                        '3' => Key::Num3,
-                        '4' => Key::Num4,
-                        '5' => Key::Num5,
-                        '6' => Key::Num6,
-                        '7' => Key::Num7,
+                        '0' => Key::Num1,
+                        '1' => Key::Num2,
+                        '2' => Key::Num3,
+                        '3' => Key::Num4,
+                        '4' => Key::Num5,
+                        '5' => Key::Num6,
+                        '6' => Key::Num7,
+                        '7' => Key::Num8,
                         _ => panic!("You're not supposed to be here.")
                     }
                 ),

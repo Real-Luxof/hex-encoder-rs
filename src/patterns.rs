@@ -9,7 +9,7 @@ const SPECIAL_HANDLER_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"Boo
 pub const POPULAR_PATTERNS: LazyLock<Vec<String>> = LazyLock::new(
     || {
         serde_json::from_str(
-            fs::read_to_string("need/patterns.json")
+            fs::read_to_string("needs/patterns.json")
                 .expect("could not read patterns.json.")
                 .as_str())
             .expect("could not parse patterns.json as an array of pattern names (strings).")

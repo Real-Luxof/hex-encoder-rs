@@ -39,7 +39,7 @@ jobs:
           name: encoder-${{ matrix.os }}
           path: |
             encoder
-            need/
+            needs/
             examples/
             README.md
       
@@ -50,6 +50,6 @@ jobs:
           name: encoder-${{ matrix.os }}
           path: |
             encoder.exe
-            need/
+            needs/
             examples/
             README.md

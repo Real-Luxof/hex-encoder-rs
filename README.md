@@ -1,5 +1,5 @@
 # hex-encoder-rs
-A (WIP) encoder for [Hex Casting](https://modrinth.com/mod/hex-casting) spell serde by autohotkey assistance or hitting some sick ass moves on that DDR pad (ingame).  
+A (WIP) encoder for [Hex Casting](https://modrinth.com/mod/hex-casting) spell serde by macro assistance or hitting some sick ass moves on that DDR pad (ingame).  
 
 Serde algorithms built in collaboration with **@Matt6049**. Huge credits to him, he's basically the brilliant guy behind a lot of this. I would've never conceived it on my own.  
 
@@ -32,16 +32,15 @@ The main idea is that a person:
         - each cast the state is taken, translated to binary, and written to their Focus.
         - this has less bitrate than it's alternative and is prone to error.
         - added by me, mostly for whimsy.
-    - or running an autohotkey script
+    - or running the macro
         - the person fills their hotbar slots 1-8 with Artifacts that write an octal to their Focus.
-        - they paste the octals provided by this encoder into the autohotkey script input.
-        - every 3 ticks (delay due to Artifact cooldown) the script changes slots to write the next octal to their Focus.
-        - this requires no skill.
-        - this has insane amounts of bitrate.
+        - they allow this program to paste in the octals generated for them when they press F6.
+        - every 3 ticks (delay due to Artifact cooldown) the script changes slots to write the next octal to their Focus with a right click.
+        - this requires no effort.
 - runs their decoder hex on their binary,
 - then is given the hex and can cast it.
-- all without any addons.
+- all without any Hex Casting addons.
 
-By the end, this encoder should be able to output binary, octals (for the autohotkey script), and dance moves for easy-medium-hard dance decoders, for all valid `.hexpattern` files. This includes macro functionality.  
+By the end, this encoder should be able to output binary, octals, and dance moves, for all valid `.hexpattern` files. This includes `.hexpattern`'s macro functionality.  
 
 Oh, and I apologize for the code. This is like, my first actual Rust project.  
