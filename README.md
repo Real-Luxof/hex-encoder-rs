@@ -5,7 +5,7 @@ Serde algorithms built in collaboration with **@Matt6049**. Huge credits to him,
 
 # How to get it
 Either:
-- download one of the GitHub releases.
+- download one of the [GitHub releases](https://github.com/Real-Luxof/hex-encoder-rs/tags).
 - compile it yourself through [GitHub actions](https://github.com/Real-Luxof/hex-encoder-rs/actions/workflows/build.yml).
 - do the following:
     - run `cargo build -r` to build the project in release mode.
