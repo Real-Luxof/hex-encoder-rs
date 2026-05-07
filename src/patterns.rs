@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::{fs, sync::LazyLock};
 
-const SPECIAL_HANDLER_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"Bookkeeper's Gambit: [v-]+|Numerical Reflection: -?\d+(\.\d+)?").unwrap());
+const SPECIAL_HANDLER_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^Bookkeeper's Gambit: [v-]+$|^Numerical Reflection: -?\d+(\.\d+)?$").unwrap());
 
 // with permission from petra i scraped the forums and found the most popular patterns
 // fun fact: somehow, Introspection is used 2067 times but Retrospection is used only 1757 times

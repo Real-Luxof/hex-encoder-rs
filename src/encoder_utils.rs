@@ -1,7 +1,7 @@
 use core::f64;
 use regex::{Captures, Regex};
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::LazyLock;
 
 use crate::patterns::{POPULAR_PATTERNS, is_pattern, is_special_handler};
@@ -282,33 +282,35 @@ pub fn tokens_to_binary(
         .map(|p| p.clone())
         .collect();
     
-    if addresses <= local_mappings.len() { return Ok(None); }
+    if addresses < local_mappings.len() { return Ok(None); }
 
-    // i feel like this might bite me in the ass later
-    let local_mappings_start_at = {
-        let threshold = addresses - local_mappings.len();
-        let mut extras = 0;
+    let threshold = addresses - local_mappings.len();
 
-        unique_patterns.iter()
-            .filter(|p| get_pat_bin(p) >= threshold)
-            .for_each(|p| {
-                extras += 1;
-                local_mappings.push(p.clone());
-            });
-        threshold + extras
-    };
+    let extras = unique_patterns.iter()
+        .filter(|p| {
+            let addy = get_pat_bin(p);
+            addy >= threshold && addy < addresses
+        })
+        .map(|p| {
+            local_mappings.push(p.clone());
+            1
+        })
+        .sum::<usize>();
 
-    // to not need to tell the decoder what address we assigned to the local mappings
+    if extras > threshold { return Ok(None) }
+
+    let local_mappings_start_at = threshold - extras;
+
+    // to maximize compression in the Matt-cat algorithm
     local_mappings.sort_by(|p1, p2| {
         let p1bin = get_pat_bin(p1);
         let p2bin = get_pat_bin(p2);
-        // it's easier on the decoder if we sort in descending order rather than ascending
         if p1bin == p2bin {
             Ordering::Equal
         } else if p1bin < p2bin {
-            Ordering::Greater
-        } else {
             Ordering::Less
+        } else {
+            Ordering::Greater
         }
     });
 
@@ -316,15 +318,9 @@ pub fn tokens_to_binary(
         ENCODING_VERSION.clone(),
         pad_0_upto(chunk_size as usize, 4)
     ]];
-    binary.push({
-        let mut push = vec![pad_0_upto(local_mappings.len(), 8)];
-        push.append(
-            &mut local_mappings.iter()
-                .map(|p| pad_0_upto(get_pat_bin(p), 8))
-                .collect()
-        );
-        push
-    });
+    dbg!(&local_mappings);
+    dbg!(local_mappings.iter().map(|p| get_pat_bin(p)).collect::<Vec<usize>>());
+    binary.push(vec!["local mappings".into(), execute_matt_cat_algorithm(&local_mappings)]);
 
     for token in tokens {
         if let Some(pat_bin) = get_pat_bin_optional(token) {
@@ -354,7 +350,8 @@ pub fn tokens_to_binary(
     Ok(Some((
         binary.into_iter()
             .flat_map(|v|
-                if v.len() > 1 { v }
+                if v.len() == 2 && v[0] == "local mappings" { vec![v[1].clone()] }
+                else if v.len() > 1 { v }
                 else {
                     if let Some(i) = local_mappings.iter().position(
                         |a| {
@@ -628,4 +625,72 @@ fn is_embedded_iota(
     pattern: &String
 ) -> bool {
     EMBEDDED_IOTA_REGEX.is_match(pattern)
+}
+
+/// numbers in -> binary tree out.
+fn execute_matt_cat_algorithm(
+    local_mappings: &Vec<String>
+) -> String {
+    let mut numbers = local_mappings.iter()
+        // "why 9??? they're 8 bit!" i hear you cry out.
+        // that's because the algorithm always assumes a prefix of 0, and rather than fixing it
+        // i've decided i'm just gonna. let it happen.
+        .map(|s| pad_0_upto(get_pat_bin(s), 9)).rev()
+        .collect::<Vec<String>>();
+
+    // "to confuse your enemy you must first confuse yourself"
+    let mut fin: Vec<String> = vec![];
+    let mut going_char = '0'; // left or right
+    let mut branches: Vec<String> = vec![];
+    let mut prefix = String::new();
+    let mut bullshit_variable: Option<(usize, usize)> = None;
+
+    while let Some(num) = numbers.pop() {
+
+        let next_num = match numbers.last() {
+            Some(s) => s,
+            None => &String::new()
+        };
+
+        let mut num_bits = num[prefix.len()..].chars();
+
+        while let Some(bit) = num_bits.next() {
+            prefix.push(bit);
+
+            if bit != going_char || !next_num.starts_with(&prefix) ||
+                {
+                    let balls = numbers.iter().filter(|p| p.starts_with(&prefix)).count();
+                    if let Some(bs_var) = bullshit_variable && balls == bs_var.0 {
+                        bullshit_variable = Some((bs_var.0, bs_var.1 - 1));
+                        bs_var.1 <= 2
+                    } else {
+                        bullshit_variable = Some((balls, balls + 1));
+                        false
+                    }
+                } {
+                bullshit_variable = None;
+
+                prefix = branches.pop().unwrap_or(String::new());
+                fin.push(String::from("0"));
+                fin.push({
+                    let mut p = vec![bit];
+                    while let Some(b) = num_bits.next() {
+                        p.push(b);
+                    }
+                    p.iter().collect()
+                });
+                going_char = '1';
+                break;
+
+            } else {
+
+                branches.push(prefix.clone());
+                fin.push(String::from("1"));
+                going_char = '0';
+
+            }
+        }
+    }
+
+    fin.join(" ")
 }

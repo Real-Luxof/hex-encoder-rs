@@ -46,7 +46,7 @@ fn encode(
     let mut strongest_contender_points = usize::MAX;
 
     // https://cdn.discordapp.com/attachments/1467549530894635171/1484382444760203324/image.png?ex=69be0661&is=69bcb4e1&hm=7f501e5bbe4e464a5795363e317dfe6130896347589fafe65cec4048c0cbb8d2&
-    for i in (unique_patterns.len() as f64).log2().floor() as u32..patterns_bits() as u32 {
+    for i in (unique_patterns.len() as f64).log2().floor() as u32..6 {
         match tokens_to_binary(
             &tokens,
             &unique_patterns,
@@ -56,7 +56,7 @@ fn encode(
                 match opt {
                     Some(binary_and_lm) => {
                         let contender = binary_and_lm.0;
-                        let points = contender.join("").len();
+                        let points = contender.join("").replace(" ", "").len();
 
                         if points < strongest_contender_points {
                             strongest_contender = contender;

@@ -17,12 +17,12 @@ pub fn translate_to_octal(
         .iter()
         .flat_map(|s| {
             let mut ret: Vec<String> = s
+                // local mappings have lotsa spaces to be readable in binary
+                .replace(" ", "")
                 .chars()
                 .chunks_of(3)
-                .map(|chars| chars
-                    .iter()
-                    .collect::<String>()
-                ).collect();
+                .map(|chars| chars.iter().collect::<String>())
+                .collect();
 
             let the_rest = s[s.len() - s.len() % 3..s.len()].to_string();
             if the_rest != "" {
@@ -43,6 +43,8 @@ pub fn translate_to_dance(
     let mut binary = contents
         .iter()
         .flat_map(|s| s
+            // local mappings have lotsa spaces to be readable in binary
+            .replace(" ", "")
             .chars()
             .collect::<Vec<char>>()
         )
