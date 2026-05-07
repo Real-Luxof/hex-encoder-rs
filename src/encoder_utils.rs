@@ -1,7 +1,7 @@
 use core::f64;
 use regex::{Captures, Regex};
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 
 use crate::patterns::{POPULAR_PATTERNS, is_pattern, is_special_handler};
@@ -627,6 +627,7 @@ fn is_embedded_iota(
     EMBEDDED_IOTA_REGEX.is_match(pattern)
 }
 
+// stop looking. i hate this part of the code.
 /// numbers in -> binary tree out.
 fn execute_matt_cat_algorithm(
     local_mappings: &Vec<String>

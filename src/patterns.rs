@@ -28,6 +28,6 @@ pub fn patterns_len() -> usize {
     POPULAR_PATTERNS.len()
 }
 
-pub fn patterns_bits() -> usize {
-    (patterns_len() as f64).log2().ceil() as usize
+pub fn patterns_bits() -> u32 {
+    (patterns_len() as f64).log2().ceil() as u32
 }
