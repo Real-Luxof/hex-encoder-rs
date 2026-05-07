@@ -719,5 +719,5 @@ fn xor(a: &String, b: &String) -> String {
 }
 
 fn floorlog2(binary: &String) -> usize {
-    binary.find("1").unwrap_or(0)
+    binary.len() - binary.find("1").unwrap_or(binary.len())
 }

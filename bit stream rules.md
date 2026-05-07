@@ -11,10 +11,11 @@ No defined maximum.
 ### LOCAL MAPPINGS
 Local mappings are a bunch of 8-bit patterns, which are taken by the decoder and mapped to  
 `CS`-bit ones. For example, if `Zone Distillation: Any` isn't in the current instr set, its  
-8-bit address is added to the local mappings. An 8-bit number is present at the start to tell  
-the decoder how many local mappings there are. Of course, there is a point beyond which local  
-mappings bloat the hex more than stepping up an instruction set would. It's the encoder's  
-job to figure out the optimal configuration.
+8-bit address is added to the local mappings. The Matt-cat algorithm is used to serialize  
+these local mappings into a binary tree, with a little bit more compression than that to  
+save a few bits here and there. Of course, there is a point beyond which local mappings may  
+bloat the binary more than stepping up an instruction set would. It's the encoder's job to  
+figure out the optimal configuration.  
 
 
 
