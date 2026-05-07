@@ -318,8 +318,6 @@ pub fn tokens_to_binary(
         ENCODING_VERSION.clone(),
         pad_0_upto(chunk_size as usize, 4)
     ]];
-    dbg!(&local_mappings);
-    dbg!(local_mappings.iter().map(|p| get_pat_bin(p)).collect::<Vec<usize>>());
     binary.push(vec!["local mappings".into(), execute_matt_cat_algorithm(&local_mappings)]);
 
     for token in tokens {
@@ -645,6 +643,7 @@ fn execute_matt_cat_algorithm(
     let mut branches: Vec<String> = vec![];
     let mut prefix = String::new();
     let mut bullshit_variable: Option<(usize, usize)> = None;
+    let mut left_node_is_leaf = false;
 
     while let Some(num) = numbers.pop() {
 
@@ -671,20 +670,33 @@ fn execute_matt_cat_algorithm(
                 } {
                 bullshit_variable = None;
 
-                prefix = branches.pop().unwrap_or(String::new());
-                fin.push(String::from("0"));
-                fin.push({
+                let mut suffix = {
                     let mut p = vec![bit];
                     while let Some(b) = num_bits.next() {
                         p.push(b);
                     }
                     p.iter().collect()
-                });
+                };
+
+                if going_char == '0' {
+                    left_node_is_leaf = true;
+                } else if left_node_is_leaf {
+                    left_node_is_leaf = false;
+                    // here comes matt into effect with his XOR magic
+                    let left = fin.last_mut().unwrap();
+                    *left = xor(&suffix, left);
+                    suffix.remove(suffix.len() - floorlog2(left));
+                }
+
                 going_char = '1';
+                prefix = branches.pop().unwrap_or(String::new());
+                fin.push(String::from("0"));
+                fin.push(suffix);
                 break;
 
             } else {
 
+                left_node_is_leaf = false;
                 branches.push(prefix.clone());
                 fin.push(String::from("1"));
                 going_char = '0';
@@ -694,4 +706,18 @@ fn execute_matt_cat_algorithm(
     }
 
     fin.join(" ")
+}
+
+fn xor(a: &String, b: &String) -> String {
+    let chars_a = a.chars().collect::<Vec<char>>();
+    let chars_b = b.chars().collect::<Vec<char>>();
+    let mut ret = String::new();
+    for idx in 0..a.len() {
+        ret.push(if chars_a[idx] == chars_b[idx] { '0' } else { '1' });
+    }
+    ret
+}
+
+fn floorlog2(binary: &String) -> usize {
+    binary.find("1").unwrap_or(0)
 }
