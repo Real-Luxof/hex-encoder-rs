@@ -5,17 +5,20 @@ Specifies the version of this encoding. This version of the bit stream rules is 
 ### CS (4 bits)
 The chunk size. The size of each pattern (before sharing 1s and 0s).  
 Want a 5-bit reduced instruction set? Set this to 5.  
-~~Minimum is 5 bits (0000 = 5 bits).~~  
 No defined maximum.  
 (Note: the total number of possible patterns is actually CS^2-1 for the null chunk.)
-### LOCAL MAPPINGS
-Local mappings are a bunch of 8-bit patterns, which are taken by the decoder and mapped to  
-`CS`-bit ones. For example, if `Zone Distillation: Any` isn't in the current instr set, its  
-8-bit address is added to the local mappings. The Matt-cat algorithm is used to serialize  
-these local mappings into a binary tree, with a little bit more compression than that to  
-save a few bits here and there. Of course, there is a point beyond which local mappings may  
-bloat the binary more than stepping up an instruction set would. It's the encoder's job to  
-figure out the optimal configuration.  
+### LOCAL MAPPINGS (algorithm-defined)
+Local mappings are a bunch of 8-bit patterns sorted in ascending order and compressed into a  
+binary tree. These are taken by the decoder and mapped to the end `CS`-bit ones. For example,  
+if `Zone Distillation: Any` isn't in the current instruction set but present in the hex being  
+serialized, its 8-bit address is added to the local mappings which the decoder takes and maps  
+to the end of its `CS`-bit instruction set, basically putting `Zone Distillation: Any` in our  
+`CS`-bit reduced instruction set.  
+
+The process of compression into the binary tree and the little bit of compression done within  
+is handled by the Matt-cat algorithm. Of course there's a point at which local mappings bloat  
+the binary and it would be better to step up an instruction set instead. It's the task of the  
+encoder to figure out the optimal configuration for smallest binary.  
 
 
 
