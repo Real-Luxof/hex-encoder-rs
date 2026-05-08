@@ -1,5 +1,5 @@
 # hex-encoder-rs
-A (WIP) encoder for [Hex Casting](https://modrinth.com/mod/hex-casting) spell serde by macro assistance or hitting some sick ass moves on that DDR pad (ingame).  
+An encoder for [Hex Casting](https://modrinth.com/mod/hex-casting) spell serde by macro assistance or hitting some sick ass moves on that DDR pad (ingame).  
 
 Serde algorithms built in collaboration with **@Matt6049**. Huge credits to him, he's basically the brilliant guy behind a lot of this. I would've never conceived it on my own.  
 
