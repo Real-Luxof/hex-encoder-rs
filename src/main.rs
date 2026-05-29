@@ -242,7 +242,7 @@ fn main() {
                 Direction::Click
             ).unwrap();
             enigo.button(Button::Right, Direction::Click).unwrap();
-            std::thread::sleep(std::time::Duration::from_millis(150));
+            std::thread::sleep(std::time::Duration::from_millis(200));
         }
     }
 
