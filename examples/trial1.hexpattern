@@ -13,18 +13,18 @@ Dioscuri Gambit
 Archer's Distillation
 Rotation Gambit II
 Architect's Distillation
-Additive Distillation
 Rotation Gambit II
 Scout's Distillation
 
-// stack: block+architect, entity
+// stack: archer, architect, entity
 
 // ignite entity if possible
 Gemini Decomposition
 Nullary Reflection
 Equality Distillation
 {
-    Jester's Gambit
+    Rotation Gambit
+	Additive Distillation
 }
 {}
 Augur's Exaltation

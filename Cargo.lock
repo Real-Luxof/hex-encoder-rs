@@ -102,7 +102,7 @@ dependencies = [
 
 [[package]]
 name = "encoder"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "device_query",
  "enable-ansi-support",
