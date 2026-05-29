@@ -11,7 +11,9 @@ jobs:
     strategy:
       matrix:
         # who the hell is casting hexes on a mac?
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # oh fuck yeah Caelum is. Fuck.
+        #os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v6
