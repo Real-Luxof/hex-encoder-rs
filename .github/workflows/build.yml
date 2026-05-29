@@ -12,11 +12,20 @@ jobs:
       matrix:
         # who the hell is casting hexes on a mac?
         # oh fuck yeah Caelum is. Fuck.
-        #os: [ubuntu-latest, windows-latest, macos-latest]
-        os: [windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v6
+
+      - name: get X11 dependencies on linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-dev \
+            libxtst-dev \
+            libxi-dev \
+            libxdo-dev
 
       - name: get rust
         uses: dtolnay/rust-toolchain@stable

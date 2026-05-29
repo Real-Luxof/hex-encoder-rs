@@ -228,20 +228,21 @@ fn main() {
             enigo.key(
                 Key::from(
                     match key {
-                        '0' => Key::Num1,
-                        '1' => Key::Num2,
-                        '2' => Key::Num3,
-                        '3' => Key::Num4,
-                        '4' => Key::Num5,
-                        '5' => Key::Num6,
-                        '6' => Key::Num7,
-                        '7' => Key::Num8,
+                        '0' => Key::Unicode('1'),
+                        '1' => Key::Unicode('2'),
+                        '2' => Key::Unicode('3'),
+                        '3' => Key::Unicode('4'),
+                        '4' => Key::Unicode('5'),
+                        '5' => Key::Unicode('6'),
+                        '6' => Key::Unicode('7'),
+                        '7' => Key::Unicode('8'),
                         _ => panic!("You're not supposed to be here.")
                     }
                 ),
                 Direction::Click
             ).unwrap();
             enigo.button(Button::Right, Direction::Click).unwrap();
+            // i would do 150 but lag exists so it has to be 200
             std::thread::sleep(std::time::Duration::from_millis(200));
         }
     }
